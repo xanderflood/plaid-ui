@@ -4,7 +4,9 @@ go 1.12
 
 require (
 	github.com/davecgh/go-spew v1.1.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.4.0
+	github.com/jessevdk/go-flags v1.4.0
 	github.com/lib/pq v1.2.0
 	github.com/myesui/uuid v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
