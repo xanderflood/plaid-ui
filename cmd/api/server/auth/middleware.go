@@ -27,7 +27,7 @@ func (a *Authorization) Valid() error {
 		return err
 	}
 
-	if a.UserUUID != nil && len(*a.UserUUID) != 0 && !a.IsAdmin {
+	if (a.UserUUID == nil || len(*a.UserUUID) == 0) && !a.IsAdmin {
 		return errors.New("non-admin user does not have an identity")
 	}
 
@@ -73,7 +73,7 @@ func JWTMiddleware(signingSecret string, authorizer Authorizer) gin.HandlerFunc 
 				return nil, errors.New("must use HMAC signing")
 			}
 
-			return signingSecret, nil
+			return []byte(signingSecret), nil
 		})
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})

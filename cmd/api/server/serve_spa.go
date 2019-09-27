@@ -12,5 +12,6 @@ func (a ServerAgent) ServeSPA(c *gin.Context) {
 		"plaid_environment": a.plaidEnvironment,
 		"plaid_public_key":  a.plaidPublicKey,
 		"plaid_webhook_url": a.plaidWebhookURL,
+		"hardcoded_jwt":     a.hardcodedJWT,
 	})
 }

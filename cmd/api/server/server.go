@@ -28,16 +28,11 @@ type ServerAgent struct {
 	plaidWebhookURL  string
 	plaidEnvironment string
 	jwtSigningSecret string
+	hardcodedJWT     string
 
 	plaidClient plaidapi.Client
 	dbClient    db.DB
 }
-
-//TODO ServerAgent#BuildGinServer
-// Should build the appropriate hierarchy with a _certain_
-// subset of endpoints wrapped in the middleware from the
-// `auth` package.
-// Also, wrap the webhook in ipfilter.
 
 func (a ServerAgent) AddRoutes(
 	e *gin.Engine,
@@ -62,6 +57,7 @@ func NewServer(
 	plaidWebhookPath string,
 	plaidEnvironment string,
 	jwtSigningSecret string,
+	hardcodedJWT string,
 
 	plaidClient plaidapi.Client,
 	dbClient db.DB,
@@ -79,6 +75,7 @@ func NewServer(
 		plaidWebhookURL:  plaidWebhookURL,
 		plaidEnvironment: plaidEnvironment,
 		jwtSigningSecret: jwtSigningSecret,
+		hardcodedJWT:     hardcodedJWT,
 
 		plaidClient: plaidClient,
 		dbClient:    dbClient,

@@ -24,8 +24,10 @@ var options struct {
 	PlaidEnvironment         string `long:"plaid-environment"          env:"PLAID_ENVIRONMENT"           required:"true"`
 	PostgresConnectionString string `long:"postgres-connection-string" env:"POSTGRES_CONNECTION_STRING"  required:"true"`
 	JWTSigningSecret         string `long:"jwt-signing-secret"         env:"JWT_SIGNING_SECRET"          required:"true"`
-	Port                     string `long:"port"                       env:"PORT"                        default:"8000"`
-	Debug                    bool   `long:"debug"                      env:"DEBUG"`
+
+	Port         string `long:"port"          env:"PORT" default:"8000"`
+	HardcodedJWT string `long:"hardcoded-jwt" env:"HARDCODED_JWT"`
+	Debug        bool   `long:"debug"         env:"DEBUG"`
 }
 
 func main() {
@@ -67,6 +69,7 @@ func main() {
 		"/v1/plaid/webhook",
 		options.PlaidEnvironment,
 		options.JWTSigningSecret,
+		options.HardcodedJWT,
 
 		plaidClient,
 		dbClient,
