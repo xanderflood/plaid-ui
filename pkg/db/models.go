@@ -3,7 +3,7 @@ package db
 import (
 	"time"
 
-	"github.com/xanderflood/plaid-ui/pkg/plaid"
+	"github.com/xanderflood/plaid-ui/pkg/plaidapi"
 )
 
 type Model struct {
@@ -19,11 +19,11 @@ type Account struct {
 
 	WebhookConfigured bool `json:"webhook_configured"`
 
-	PlaidAccessToken    string               `json:"plaid_access_token"`
-	PlaidAccountID      string               `json:"plaid_account_id"`
-	PlaidAccountName    string               `json:"plaid_account_name"`
-	PlaidAccountType    plaid.AccountType    `json:"plaid_account_type"`
-	PlaidAccountSubtype plaid.AccountSubtype `json:"plaid_account_subtype"`
+	PlaidAccessToken    string                  `json:"plaid_access_token"`
+	PlaidAccountID      string                  `json:"plaid_account_id"`
+	PlaidAccountName    string                  `json:"plaid_account_name"`
+	PlaidAccountType    plaidapi.AccountType    `json:"plaid_account_type"`
+	PlaidAccountSubtype plaidapi.AccountSubtype `json:"plaid_account_subtype"`
 
 	PlaidItemID          string `json:"plaid_item_id"`
 	PlaidInstitutionName string `json:"plaid_institution_name"`

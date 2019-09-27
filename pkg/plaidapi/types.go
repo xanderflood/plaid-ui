@@ -1,4 +1,4 @@
-package plaid
+package plaidapi
 
 type AccountType string
 
