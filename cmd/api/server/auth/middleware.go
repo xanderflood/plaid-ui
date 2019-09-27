@@ -37,16 +37,16 @@ func (a *Authorization) Valid() error {
 //AuthGetter is a helper for grabbing the Authorization
 //that the middleware stores in the context.
 //go:generate counterfeiter . AuthGetter
-type AuthGetter func(c *gin.Context) Authorization
+type AuthGetter func(c *gin.Context) (Authorization, bool)
 
 //GetAuthorization is the default AuthGetter
-func GetAuthorization(c *gin.Context) Authorization {
+func GetAuthorization(c *gin.Context) (Authorization, bool) {
 	authIface := c.Value(AuthorizationContextKey)
 	auth, ok := authIface.(Authorization)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization object was found"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization object was found"})
 	}
-	return auth
+	return auth, ok
 }
 
 //Authorizer represents the needed interactions with jwt.Parser
@@ -62,7 +62,8 @@ func JWTMiddleware(signingSecret string, authorizer Authorizer) gin.HandlerFunc 
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "no authorization provided"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "no authorization provided"})
+			return
 		}
 
 		var auth Authorization
@@ -75,7 +76,8 @@ func JWTMiddleware(signingSecret string, authorizer Authorizer) gin.HandlerFunc 
 			return signingSecret, nil
 		})
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
 		}
 
 		c.Set(AuthorizationContextKey, auth)

@@ -23,6 +23,7 @@ var options struct {
 	PlaidPublicKey           string `long:"plaid-public-key"           env:"PLAID_PUBLIC_KEY"            required:"true"`
 	PlaidEnvironment         string `long:"plaid-environment"          env:"PLAID_ENVIRONMENT"           required:"true"`
 	PostgresConnectionString string `long:"postgres-connection-string" env:"POSTGRES_CONNECTION_STRING"  required:"true"`
+	JWTSigningSecret         string `long:"jwt-signing-secret"         env:"JWT_SIGNING_SECRET"          required:"true"`
 	Port                     string `long:"port"                       env:"PORT"                        default:"8000"`
 	Debug                    bool   `long:"debug"                      env:"DEBUG"`
 }
@@ -65,6 +66,7 @@ func main() {
 		options.PlaidPublicKey,
 		"/v1/plaid/webhook",
 		options.PlaidEnvironment,
+		options.JWTSigningSecret,
 
 		plaidClient,
 		dbClient,
@@ -72,14 +74,10 @@ func main() {
 
 	//build the gin server
 	r := gin.Default()
+
 	r.LoadHTMLFiles("templates/index.tmpl")
 	r.Static("/static", "./static")
-
-	r.GET("/", server.ServeSPA)
-	r.POST("/add_plaid_item", server.AddPlaidItem)
-	r.GET("/get_accounts", server.GetAccounts)
-
-	//TODO webhook
+	server.AddRoutes(r)
 
 	r.Run(":" + options.Port)
 }

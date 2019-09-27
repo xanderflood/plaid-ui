@@ -3,8 +3,10 @@ package server
 import (
 	"net/url"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 
+	"github.com/xanderflood/plaid-ui/cmd/api/server/auth"
 	"github.com/xanderflood/plaid-ui/pkg/db"
 	"github.com/xanderflood/plaid-ui/pkg/plaidapi"
 )
@@ -25,6 +27,7 @@ type ServerAgent struct {
 	plaidPublicKey   string
 	plaidWebhookURL  string
 	plaidEnvironment string
+	jwtSigningSecret string
 
 	plaidClient plaidapi.Client
 	dbClient    db.DB
@@ -36,12 +39,29 @@ type ServerAgent struct {
 // `auth` package.
 // Also, wrap the webhook in ipfilter.
 
+func (a ServerAgent) AddRoutes(
+	e *gin.Engine,
+) {
+	e.GET("/", a.ServeSPA)
+
+	//JWT endpoints
+	jwtGroup := e.Group("/api/v1",
+		auth.JWTMiddleware(
+			a.jwtSigningSecret,
+			&jwt.Parser{ValidMethods: []string{"HS256"}},
+		),
+	)
+	jwtGroup.POST("/add_plaid_item", a.AddPlaidItem)
+	jwtGroup.GET("/get_accounts", a.GetAccounts)
+}
+
 func NewServer(
 	serviceDomain string,
 	spaTermplateName string,
 	plaidPublicKey string,
 	plaidWebhookPath string,
 	plaidEnvironment string,
+	jwtSigningSecret string,
 
 	plaidClient plaidapi.Client,
 	dbClient db.DB,
@@ -58,6 +78,7 @@ func NewServer(
 		plaidPublicKey:   plaidPublicKey,
 		plaidWebhookURL:  plaidWebhookURL,
 		plaidEnvironment: plaidEnvironment,
+		jwtSigningSecret: jwtSigningSecret,
 
 		plaidClient: plaidClient,
 		dbClient:    dbClient,
