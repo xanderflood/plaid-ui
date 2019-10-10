@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Plaid Quickstart Example</title>
+<title>Plaid UI</title>
 <link rel="stylesheet" href="https://threads.plaid.com/threads.css">
 
 <link rel="stylesheet" type="text/css" href="./static/style.css">
@@ -13,7 +13,7 @@
     <div class="grid">
       <div class="grid__column grid__column--is-twelve-columns">
         <div id="banner" class="everpresent-content">
-          <h1 class="everpresent-content__heading">Plaid Quickstart</h1>
+          <h1 class="everpresent-content__heading">Plaid UI</h1>
           <p id="intro" class="everpresent-content__subheading">
             An example application that outlines an end-to-end integration with Plaid
           </p>
@@ -40,14 +40,20 @@
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <script>
   //TODO obtain this from a cookie
-  var hardcodedJWT = '{{ .hardcoded_jwt }}';
+  function getCookie(name) {
+    var value = "; " + document.cookie;
+    var parts = value.split("; " + name + "=");
+    if (parts.length == 2) return parts.pop().split(";").shift();
+  }
 
   function authenticatedRequest(httpMethod, url, body, onSuccess) {
+    console.log(getCookie("_identify_jwt_string"))
     $.ajax({
       "type": httpMethod,
       "url": url,
       "data": body,
-      "beforeSend": function(xhr){xhr.setRequestHeader('Authorization', 'Bearer ' + hardcodedJWT);},
+      //TODO parametrize the cookie name
+      "beforeSend": function(xhr){xhr.setRequestHeader('Authorization', 'Bearer ' + getCookie("_identify_jwt_string"));},
       "success": onSuccess
     });
   }
@@ -77,6 +83,12 @@
           }
         )
       },
+      onExit: function(err, metadata) {
+        //TODO send it to the backend for storage/logging?
+        if (err != null) {
+          console.log(err, '{{ .plaid_webhook_url }}');
+        }
+      },
     });
 
     $('#link-btn').on('click', function(e) {
@@ -89,20 +101,16 @@
         '/api/v1/get_accounts',
         undefined,
         function(data) {
-          if (data.error != null && data.error.error_code != null) {
-            console.log("error")
+          if (data.error != null || data.error.error_code != null) {
             // Format the error
             var errorHtml = '<div class="inner"><p>' +
             '<strong>' + data.error.error_code + ':</strong> ' +
             (data.error.display_message == null ? data.error.error_message : data.error.display_message)  + '</p></div>';
 
-            if (data.error.error_code === 'PRODUCT_NOT_READY') {
-              // Add additional context for `PRODUCT_NOT_READY` errors
-              errorHtml += '<div class="inner"><p>Note: A PRODUCT_NOT_READY error occurred.</p></div>';
-            }
             // Render the error
             $('#get-transactions-data').slideUp(function() {
               displayError($('accounts-tbody'), data.error)
+              // TODO
               // $(this).slideUp(function() {
               //   $(this).html(errorHtml).slideDown();
               // });
