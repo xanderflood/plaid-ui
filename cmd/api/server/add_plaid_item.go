@@ -3,7 +3,6 @@ package server
 import (
 	"net/http"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
 	"github.com/plaid/plaid-go/plaid"
 	"github.com/xanderflood/plaid-ui/pkg/db"
@@ -12,6 +11,11 @@ import (
 
 //AddPlaidItem adds all the accounts associated with this plaid item
 func (a ServerAgent) AddPlaidItem(c *gin.Context) {
+	authorization, ok := a.authorize(c)
+	if !ok {
+		return
+	}
+
 	publicToken := c.PostForm("public_token")
 	exchangeTokenResponse, err := a.plaidClient.ExchangePublicToken(publicToken)
 	if err != nil {
@@ -43,9 +47,8 @@ func (a ServerAgent) AddPlaidItem(c *gin.Context) {
 	for _, acct := range getAccountsResponse.Accounts {
 		//TODO enable the webhook for each account
 
-		spew.Dump(getItemResponse.Item.Webhook)
-
-		_, err := a.dbClient.CreateAccount(
+		_, err := a.dbClient.CreateAccount(c,
+			authorization.UserUUID,
 			db.Account{
 				PlaidAccessToken:    exchangeTokenResponse.AccessToken,
 				PlaidAccountID:      acct.AccountID,

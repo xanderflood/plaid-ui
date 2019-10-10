@@ -8,7 +8,12 @@ import (
 
 //GetAccounts gets all the accounts
 func (a ServerAgent) GetAccounts(c *gin.Context) {
-	accounts, err := a.dbClient.GetAccounts()
+	auth, ok := a.authorize(c)
+	if !ok {
+		return //an error response has already been generated
+	}
+
+	accounts, err := a.dbClient.GetAccounts(c, auth.UserUUID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
