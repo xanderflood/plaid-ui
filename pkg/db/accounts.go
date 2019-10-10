@@ -1,21 +1,19 @@
 package db
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 )
-
-//TODO all of these should
-// (1) take and pass on a Context
-// (2) scoped to a user UUID
-//the API layer should validate authorization to access a given user
 
 var ErrNoSuchAccount = errors.New("no such account")
 
 //EnsureAccountsTable EnsureAccountsTable
-func (a *DBAgent) EnsureAccountsTable() error {
-	_, err := a.db.Exec(`
+func (a *DBAgent) EnsureAccountsTable(ctx context.Context) error {
+	_, err := a.db.ExecContext(ctx, `
 CREATE TABLE IF NOT EXISTS "accounts"
-(	"uuid" varchar,
+(	"uuid" UUID,
+	"user_uuid" UUID REFERENCES users(uuid),
 	"created_at" timestamp NOT NULL,
 	"modified_at" timestamp NOT NULL,
 	"deleted_at" timestamp,
@@ -38,17 +36,23 @@ CREATE TABLE IF NOT EXISTS "accounts"
 		return errors.Wrapf(err, "failed to ensure accounts table")
 	}
 
-	_, err = a.db.Exec(`CREATE INDEX ON accounts USING btree(plaid_item_id)`)
-	return errors.Wrap(err, "failed to ensure plaid_item_id index")
+	_, err = a.db.ExecContext(ctx, `CREATE INDEX ON accounts USING btree(plaid_item_id)`)
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure plaid_item_id index for accounts")
+	}
+
+	_, err = a.db.ExecContext(ctx, `CREATE INDEX ON accounts USING btree(user_uuid)`)
+	return errors.Wrap(err, "failed to ensure user_uuid index for accounts")
 
 }
 
 //CreateAccount inserts an account into the table
-func (a *DBAgent) CreateAccount(acct Account) (string, error) {
+func (a *DBAgent) CreateAccount(ctx context.Context, userUUID string, acct Account) (string, error) {
 	uuid := a.uuider.UUID()
-	_, err := a.db.Exec(`
+	_, err := a.db.ExecContext(ctx, `
 INSERT INTO "accounts" (
 	"uuid",
+	"user_uuid"
 	"created_at",
 	"modified_at",
 
@@ -63,11 +67,12 @@ INSERT INTO "accounts" (
 	"plaid_institution_url",
 	"plaid_institution_logo"
 ) VALUES (
-	$1, NOW(), NOW(),
-	$2, $3, $4, $5, $6,
-	$7, $8, $9, $10
+	$1, $2, NOW(), NOW(),
+	$3, $4, $5, $6, $7,
+	$8, $9, $10, $11
 )`,
 		uuid,
+		userUUID,
 		acct.PlaidAccessToken,
 		acct.PlaidAccountID,
 		acct.PlaidAccountName,
@@ -85,8 +90,8 @@ INSERT INTO "accounts" (
 }
 
 //GetAccounts gets all the accounts
-func (a *DBAgent) GetAccounts() ([]Account, error) {
-	rows, err := a.db.Query(`
+func (a *DBAgent) GetAccounts(ctx context.Context, userUUID string) ([]Account, error) {
+	rows, err := a.db.QueryContext(ctx, `
 SELECT
 	"uuid",
 	"created_at",
@@ -102,8 +107,13 @@ SELECT
 	"plaid_institution_name",
 	"plaid_institution_url",
 	"plaid_institution_logo"
-FROM "accounts" WHERE "deleted_at" IS NULL
+FROM "accounts"
+WHERE
+	"deleted_at" IS NULL
+	AND
+	"user_uuid" = $1
 `,
+		userUUID,
 	)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get accounts from table")
@@ -137,17 +147,18 @@ FROM "accounts" WHERE "deleted_at" IS NULL
 }
 
 //ConfigureAccount mark an account as webhook-configured
-func (a *DBAgent) ConfigureAccount(uuid string) error {
-	return a.setAccountConfigured(uuid, true)
+func (a *DBAgent) ConfigureAccount(ctx context.Context, userUUID string, uuid string) error {
+	return a.setAccountConfigured(ctx, userUUID, uuid, true)
 }
 
 //DeconfigureAccount mark an account as not webhook-configured
-func (a *DBAgent) DeconfigureAccount(uuid string) error {
-	return a.setAccountConfigured(uuid, false)
+func (a *DBAgent) DeconfigureAccount(ctx context.Context, userUUID string, uuid string) error {
+	return a.setAccountConfigured(ctx, userUUID, uuid, false)
 }
 
-func (a *DBAgent) setAccountConfigured(uuid string, val bool) error {
-	_, err := a.db.Exec(`
+//TODO make sure this can only access accounts owned by the user
+func (a *DBAgent) setAccountConfigured(ctx context.Context, userUUID string, uuid string, val bool) error {
+	_, err := a.db.ExecContext(ctx, userUUID, `
 UPDATE "accounts"
 SET "webhook_configured" = $1
 WHERE "arrivals"."identifier" = $2`,
