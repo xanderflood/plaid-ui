@@ -46,6 +46,7 @@ func (a ServerAgent) AddPlaidItem(c *gin.Context) {
 
 	for _, acct := range getAccountsResponse.Accounts {
 		//TODO enable the webhook for each account
+		//  is this going to be done automatically by the frontend?
 
 		_, err := a.dbClient.CreateAccount(c,
 			authorization.UserUUID,

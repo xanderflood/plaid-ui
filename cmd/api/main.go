@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -79,7 +80,7 @@ func main() {
 		logger,
 		options.PlaidEnvironment,
 		options.PlaidPublicKey,
-		"/v1/plaid/webhook", //TODO refactor the router logic
+		fmt.Sprintf("https://%s/v1/plaid/webhook", options.ServiceDomain), //TODO refactor the router logic
 		map[views.TemplateName]string{
 			views.TemplateNameSPA:           "index.tmpl",
 			views.TemplateNameNotRegistered: "not_registered.tmpl",
@@ -100,7 +101,7 @@ func main() {
 		logger,
 
 		options.ServiceDomain,
-		"/v1/plaid/webhook", //TODO refactor the router logic
+		fmt.Sprintf("https://%s/webhook/v1", options.ServiceDomain), //TODO refactor the router logic
 
 		authMgr,
 		renderer,

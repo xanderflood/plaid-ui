@@ -9,4 +9,6 @@ type Client interface {
 	GetItem(accessToken string) (resp plaid.GetItemResponse, err error)
 	GetInstitutionByIDWithOptions(id string, options plaid.GetInstitutionByIDOptions) (resp plaid.GetInstitutionByIDResponse, err error)
 	GetAccounts(accessToken string) (resp plaid.GetAccountsResponse, err error)
+	GetTransactions(accessToken, startDate, endDate string) (resp plaid.GetTransactionsResponse, err error)
+	UpdateItemWebhook(accessToken, webhook string) (resp plaid.UpdateItemWebhookResponse, err error)
 }

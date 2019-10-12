@@ -3,23 +3,34 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	"github.com/pkg/errors"
 )
+
+//ErrBadToken indicates that an invalid pagination token has been provided
+var ErrBadToken = errors.New("bad pagination token")
 
 //DB is the minimal database interface to back the app
 //go:generate counterfeiter . DB
 type DB interface {
 	EnsureUsersTable(ctx context.Context) error
 	EnsureAccountsTable(ctx context.Context) error
+	EnsureTransactionsTable(ctx context.Context) error
 
 	RegisterUser(ctx context.Context, uuid string, email string) error
 	CheckUser(ctx context.Context, uuid string) (bool, error)
 
 	CreateAccount(ctx context.Context, userUUID string, acct Account) (string, error)
+	GetAccountsByPlaidItemID(ctx context.Context, itemID string) ([]Account, error)
 	GetAccounts(ctx context.Context, userUUID string) ([]Account, error)
-
-	//these mark a given account as WebhookConfigured or not
 	ConfigureAccount(ctx context.Context, userUUID string, uuid string) error
 	DeconfigureAccount(ctx context.Context, userUUID string, uuid string) error
+
+	//TODO for upsert and delete, check whether the account actually
+	//exists before querying the transactions table?
+	UpsertTransaction(ctx context.Context, accountUUID string, transaction Transaction) (bool, error)
+	DeleteTransactionByPlaidID(ctx context.Context, plaidTransactionID string) error
+	GetTransactions(ctx context.Context, accountUUID string, token string) ([]Transaction, error)
 }
 
 //DBAgent implements DB using a *sql.DB
@@ -43,6 +54,10 @@ func EnsureTables(ctx context.Context, db DB) error {
 		return err
 	}
 	err = db.EnsureAccountsTable(ctx)
+	if err != nil {
+		return err
+	}
+	err = db.EnsureTransactionsTable(ctx)
 	if err != nil {
 		return err
 	}

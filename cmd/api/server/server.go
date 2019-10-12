@@ -26,7 +26,7 @@ type Server interface {
 	RegisterUser(c *gin.Context)
 
 	// plaid webhooks
-	// GenericWebhook(c *gin.Context)
+	GenericPlaidWebhook(c *gin.Context)
 
 	// authorization code
 	BackendAuthorizationMiddleware(c *gin.Context)
@@ -54,6 +54,10 @@ type ServerAgent struct {
 func AddRoutes(e *gin.Engine, a Server) {
 	frontend := e.Group("/", a.FrontendAuthorizationMiddleware)
 	frontend.GET("/", a.ServeSPA)
+
+	//webhook
+	webhook := e.Group("/webhook")
+	webhook.POST("/v1", a.GenericPlaidWebhook)
 
 	//JWT endpoints
 	backend := e.Group("/api/v1", a.BackendAuthorizationMiddleware)
