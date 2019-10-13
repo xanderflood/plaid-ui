@@ -69,14 +69,6 @@ func AddRoutes(e *gin.Engine, a Server) {
 	adminGroup.POST("/register-user", a.RegisterUser)
 }
 
-type TemplateName string
-
-const (
-	TemplateNameSPA           TemplateName = "SPA"
-	TemplateNameNotRegistered TemplateName = "NotRegistered"
-	TemplateNameErrorCode     TemplateName = "404"
-)
-
 //NewServer creates a new Server.
 func NewServer(
 	logger tools.Logger,
