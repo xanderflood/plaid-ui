@@ -2,7 +2,7 @@
 
 build-docker:
 	GOOS=linux go build -o build/api/api ./cmd/api
-	docker build build/api -t xanderflood/plaid-ui:staging
+	docker build build/api -t xanderflood/plaid-ui:local
 
 build-local:
 	go build -o build/api/api ./cmd/api
