@@ -19,18 +19,15 @@ notifications:
 
 before_install:
   - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.21.0
-  - go install github.com/onsi/ginkgo/ginkgo  # installs the ginkgo CLI
-  - go install github.com/onsi/gomega/...     # fetches the matcher library
 
 before_script:
   - golangci-lint run --config=.golangci-lint.yaml # run a bunch of code checkers/linters in parallel
-  - ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race --progress
-  - GOOS=linux go build # target the container environment
+  - cd build/api && GOOS=linux go build # target the container environment
 
 script:
   - docker login -u $DOCKER_USER -p $DOCKER_PASS
 
-  - docker build . -t $REPO:travis-$TRAVIS_BUILD_NUMBER
+  - cd build/api && docker build . -t $REPO:travis-$TRAVIS_BUILD_NUMBER
   - docker tag $REPO:travis-$TRAVIS_BUILD_NUMBER ${TRAVIS_COMMIT::8}
   - docker tag $REPO:travis-$TRAVIS_BUILD_NUMBER $REPO:$TRAVIS_BRANCH
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo "staging" ; fi`
@@ -40,7 +37,3 @@ script:
   - docker push $REPO:${TRAVIS_COMMIT::8}
   - docker push $REPO:$TRAVIS_BRANCH
   - docker push $REPO:$TAG
-
-after_success:
-  - touch coverage.txt; find . -name "*.coverprofile" | xargs -l cat >> coverage.txt
-  - curl -s https://codecov.io/bash | bash -

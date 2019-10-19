@@ -121,5 +121,5 @@ func main() {
 	r.Static("/static", "./static")
 	server.AddRoutes(r, srv)
 
-	r.Run(":" + options.Port)
+	log.Fatal(r.Run(":" + options.Port))
 }

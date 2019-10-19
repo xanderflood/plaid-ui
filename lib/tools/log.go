@@ -20,6 +20,6 @@ type Logger interface {
 //NewStdoutLogger returns a Logger that writes colorized
 //output to stdout.
 func NewStdoutLogger() Logger {
-	loggo.RegisterWriter("stdout", loggocolor.NewWriter(os.Stdout))
+	loggo.RegisterWriter("stdout", loggocolor.NewWriter(os.Stdout)) //nolint:errcheck
 	return loggo.GetLogger("stdout")
 }

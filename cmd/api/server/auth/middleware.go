@@ -142,7 +142,7 @@ func (a JWTAuthorizationManager) BackendMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		ok, err := a.db.CheckUser(c, auth.UserUUID)
+		ok, err := a.requireServiceAccess(c, auth)
 		if err != nil {
 			a.logger.Errorf(err.Error())
 			c.AbortWithStatusJSON(
@@ -171,7 +171,7 @@ func (a JWTAuthorizationManager) FrontendMiddleware() gin.HandlerFunc {
 	redirectToLogin := func(c *gin.Context) {
 		//copy the base URL and add the query param
 		var loginBaseURL *url.URL
-		loginBaseURL = &*a.loginBaseURLRef
+		*loginBaseURL = *a.loginBaseURLRef
 		loginBaseURL.Query().Add(
 			"referrer_url",
 			c.Request.URL.String(),
@@ -194,7 +194,7 @@ func (a JWTAuthorizationManager) FrontendMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		ok, err := a.db.CheckUser(c, auth.UserUUID)
+		ok, err := a.requireServiceAccess(c, auth)
 		if err != nil {
 			a.logger.Errorf(err.Error())
 			a.renderer.RenderStatusCode(
