@@ -12,4 +12,3 @@ docker: build-docker
 
 local: build-local
 	cd build/api && godotenv -f ../../.env ./api
-
