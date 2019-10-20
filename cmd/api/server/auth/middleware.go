@@ -170,8 +170,8 @@ func (a JWTAuthorizationManager) BackendMiddleware() gin.HandlerFunc {
 func (a JWTAuthorizationManager) FrontendMiddleware() gin.HandlerFunc {
 	redirectToLogin := func(c *gin.Context) {
 		//copy the base URL and add the query param
-		var loginBaseURL *url.URL
-		*loginBaseURL = *a.loginBaseURLRef
+		loginBaseURLObj := *a.loginBaseURLRef
+		loginBaseURL := &loginBaseURLObj
 		loginBaseURL.Query().Add(
 			"referrer_url",
 			c.Request.URL.String(),
