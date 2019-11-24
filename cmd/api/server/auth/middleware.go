@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -100,7 +99,6 @@ func NewAuthorizationManager(
 
 func (a JWTAuthorizationManager) getAuthorizationFromString(tokenString string) (Authorization, error) {
 	var auth Authorization
-	fmt.Println("parsing token string:", tokenString)
 	_, err := a.authorizer.ParseWithClaims(tokenString, &auth, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("must use HMAC signing")
@@ -112,7 +110,6 @@ func (a JWTAuthorizationManager) getAuthorizationFromString(tokenString string) 
 		return Authorization{}, err
 	}
 
-	fmt.Println("parsed out uuid:", auth.UserUUID)
 	return auth, nil
 }
 

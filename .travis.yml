@@ -20,18 +20,13 @@ before_install:
 
 before_script:
   - docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.21.0 golangci-lint run --config=.golangci-lint.yaml
-  - make build-docker
 
 script:
   - docker login -u $DOCKER_USER -p $DOCKER_PASS
-
-  - DOCKER_REPO=xanderflood/plaid-ui
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo "staging" ; fi`
 
-  - docker tag $DOCKER_REPO:local $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER
-  - docker tag $DOCKER_REPO:local $DOCKER_REPO:${TRAVIS_COMMIT::8}
-  - docker tag $DOCKER_REPO:local $DOCKER_REPO:$TAG
-
-  - docker push $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER
-  - docker push $DOCKER_REPO:${TRAVIS_COMMIT::8}
-  - docker push $DOCKER_REPO:$TAG
+  - CGO_ENABLED=0 GOOS=linux go build -o ./build/api/api ./cmd/api
+  - export docker_repo=xanderflood/identify
+  - export docker_build_directory=./build/api
+  - export tags="build-${TRAVIS_BUILD_NUMBER},commit-${TRAVIS_COMMIT::8},$TAG"
+  - ./build_and_push_image.sh
