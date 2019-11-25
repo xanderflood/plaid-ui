@@ -25,7 +25,7 @@ func (a ServerAgent) RegisterUser(c *gin.Context) {
 	}
 
 	var req RegistrationRequest
-	err := c.ShouldBindJSON(&req)
+	err := c.Bind(&req)
 	if err != nil {
 		//TODO is this error message safe to expose?
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
