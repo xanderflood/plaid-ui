@@ -45,7 +45,7 @@
     if (parts.length == 2) return parts.pop().split(";").shift();
   }
 
-  function authenticatedRequest(httpMethod, url, body, onSuccess) {
+  function authenticatedRequest(httpMethod, url, body, onComplete) {
     console.log(getCookie("_identify_jwt_string"))
     $.ajax({
       "type": httpMethod,
@@ -53,7 +53,7 @@
       "data": body,
       //TODO parametrize the cookie name
       "beforeSend": function(xhr){xhr.setRequestHeader('Authorization', 'Bearer ' + getCookie("_identify_jwt_string"));},
-      "success": onSuccess
+      "complete": onComplete
     });
   }
 
