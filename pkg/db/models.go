@@ -51,7 +51,7 @@ const StandardAccountFieldNameList = `
 	"plaid_institution_logo"
 `
 
-func (a Account) StandardFieldPointers() []interface{} {
+func (a *Account) StandardFieldPointers() []interface{} {
 	return []interface{}{
 		&a.UUID,
 		&a.UserUUID,

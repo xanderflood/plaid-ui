@@ -109,7 +109,7 @@ WHERE
 	var accounts []Account
 	for rows.Next() {
 		var account Account
-		err = rows.Scan(account.StandardFieldPointers()...)
+		err = rows.Scan((&account).StandardFieldPointers()...)
 		if err != nil {
 			break
 		}
@@ -140,7 +140,7 @@ WHERE
 	var accounts []Account
 	for rows.Next() {
 		var account Account
-		err = rows.Scan(account.StandardFieldPointers()...)
+		err = rows.Scan((&account).StandardFieldPointers()...)
 		if err != nil {
 			break
 		}

@@ -46,7 +46,6 @@
   }
 
   function authenticatedRequest(httpMethod, url, body, onComplete) {
-    console.log(getCookie("_identify_jwt_string"))
     $.ajax({
       "type": httpMethod,
       "url": url,
