@@ -68,7 +68,7 @@ INSERT INTO "accounts" (
 	"plaid_pending_transaction_id",
 	"plaid_account_owner",
 	"plaid_transaction_id",
-	"plaid_type",
+	"plaid_type"
 ) VALUES (
 	$1, $2, $3, NOW(), NOW(),
 	$4, $5, $6,
