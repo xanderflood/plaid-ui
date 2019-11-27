@@ -1,0 +1,8 @@
+#!/bin/sh
+set +x
+
+export PLAID_SECRET=`cat $PLAID_SECRET_FILE`
+export PGPASSWORD=`cat $PGPASSWORD_FILE`
+export JWT_SIGNING_SECRET=`cat $JWT_SIGNING_SECRET_FILE`
+
+./api
