@@ -99,7 +99,9 @@
         '/api/v1/get_accounts',
         undefined,
         function(data) {
+          console.log("here");
           if (data.error != null || data.error.error_code != null) {
+            console.log("error");
             // Format the error
             var errorHtml = '<div class="inner"><p>' +
             '<strong>' + data.error.error_code + ':</strong> ' +
@@ -114,6 +116,7 @@
               // });
             });
           } else {
+            console.log("success");
             var html = '<tr><td><strong>UUID</strong></td><td><strong>Name</strong></td><td><strong>Institution</strong></td><td><strong>Item ID</strong></td><td><strong>Account ID</strong></td><td><strong>Webhook?</strong></td></tr>';
             if (data.accounts) {
               data.accounts.forEach(function(acct, idx) {
