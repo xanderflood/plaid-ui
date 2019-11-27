@@ -32,11 +32,13 @@ script:
   # build and push the base image
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo "staging" ; fi`
   - export tmpname="local"
+  - export dockerfile="Dockerfile"
   - export tags="build-${TRAVIS_BUILD_NUMBER},commit-${TRAVIS_COMMIT::8},$TAG"
   - ./build_and_push_image.sh
 
   # build and push the swarm-focused image
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "swarm"; else echo "swarm-staging" ; fi`
   - export tmpname="swarm-local"
+  - export dockerfile="swarm.Dockerfile"
   - export tags="build-${TRAVIS_BUILD_NUMBER},commit-${TRAVIS_COMMIT::8},$TAG"
   - ./build_and_push_image.sh
