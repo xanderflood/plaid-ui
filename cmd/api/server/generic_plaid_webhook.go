@@ -104,7 +104,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 		case InitialUpdate:
 			_, err := a.transactionWebhookAddHelper(c, wr.Newtransactions, wr.ItemID)
 			if err != nil {
-				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items: %w", wr.ItemID, wr.Newtransactions, err)
+				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items: %s", wr.ItemID, wr.Newtransactions, err.Error())
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
