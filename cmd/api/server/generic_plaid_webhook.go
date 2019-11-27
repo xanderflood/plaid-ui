@@ -99,7 +99,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			return
 		}
 	case TransactionsWebhookType:
-		a.logger.Infof("processing transaction webhook code `%s` for item `%s`: %s", wr.Code, wr.ItemID, err.Error())
+		a.logger.Infof("processing transaction webhook code `%s` for item `%s`", wr.Code, wr.ItemID)
 		switch wr.Code {
 		case InitialUpdate:
 			_, err := a.transactionWebhookAddHelper(c, wr.Newtransactions, wr.ItemID)

@@ -135,7 +135,7 @@ SELECT
 	"plaid_pending_transaction_id",
 	"plaid_account_owner",
 	"plaid_transaction_id",
-	"plaid_type",
+	"plaid_type"
 FROM "accounts"
 WHERE
 	"deleted_at" IS NULL
