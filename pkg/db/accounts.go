@@ -52,7 +52,7 @@ func (a *DBAgent) CreateAccount(ctx context.Context, userUUID string, acct Accou
 	_, err := a.db.ExecContext(ctx, `
 INSERT INTO "accounts" (
 	"uuid",
-	"user_uuid"
+	"user_uuid",
 	"created_at",
 	"modified_at",
 
