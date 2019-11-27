@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 
@@ -167,15 +166,22 @@ func (a JWTAuthorizationManager) BackendMiddleware() gin.HandlerFunc {
 //to refer the user back here afterwards.
 func (a JWTAuthorizationManager) FrontendMiddleware() gin.HandlerFunc {
 	redirectToLogin := func(c *gin.Context) {
+		//build the URL to redirect back to after logging ing
+		requestURL := (&url.URL{
+			Scheme: "https",
+			Host:   c.Request.Host,
+			Path:   c.Request.URL.Path,
+		})
+
+		//prepare it for the query string
+		query := make(url.Values)
+		query.Set("referrer_url", requestURL.String())
+
 		//copy the base URL and add the query param
 		loginBaseURLObj := *a.loginBaseURLRef
 		loginBaseURL := &loginBaseURLObj
-		loginBaseURL.Query().Add(
-			"referrer_url",
-			c.Request.URL.String(),
-		)
+		loginBaseURL.RawQuery = query.Encode()
 
-		spew.Dump(loginBaseURL)
 		c.Redirect(http.StatusTemporaryRedirect, loginBaseURL.String())
 		c.Abort()
 	}
