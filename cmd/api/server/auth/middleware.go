@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 
@@ -174,6 +175,7 @@ func (a JWTAuthorizationManager) FrontendMiddleware() gin.HandlerFunc {
 			c.Request.URL.String(),
 		)
 
+		spew.Dump(loginBaseURL)
 		c.Redirect(http.StatusTemporaryRedirect, loginBaseURL.String())
 		c.Abort()
 	}
