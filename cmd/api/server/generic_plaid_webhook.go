@@ -66,7 +66,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 
 	accounts, err := a.dbClient.GetAccountsByPlaidItemID(c, wr.ItemID)
 	if err != nil {
-		a.logger.Errorf("failed getting accounts for plaid item `%s`", wr.ItemID)
+		a.logger.Errorf("failed getting accounts for plaid item `%s`: %w", wr.ItemID, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -82,7 +82,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			if wr.NewWebhookURL != a.plaidWebhookURL {
 				_, err := a.plaidClient.UpdateItemWebhook(accounts[0].PlaidItemID, a.plaidWebhookURL)
 				if err != nil {
-					a.logger.Errorf("failed processing webhook-update webhook for plaid item `%s` with `%s` as value", wr.ItemID, wr.NewWebhookURL)
+					a.logger.Errorf("failed processing webhook-update webhook for plaid item `%s` with `%s` as value: %w", wr.ItemID, wr.NewWebhookURL, err)
 					c.AbortWithStatus(http.StatusInternalServerError)
 					return
 				}
@@ -90,21 +90,21 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			return
 
 		case ItemError:
-			a.logger.Errorf("received an error webhook from Plaid: %s", wr.Error)
+			a.logger.Errorf("received an error webhook from Plaid: %s: %w", wr.Error, err)
 			return
 
 		default:
-			a.logger.Errorf("invalid transaction webhook code `%s`", wr.Code)
+			a.logger.Errorf("invalid transaction webhook code `%s`: %w", wr.Code, err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 	case TransactionsWebhookType:
-		a.logger.Infof("processing transaction webhook code `%s` for item `%s`", wr.Code, wr.ItemID)
+		a.logger.Infof("processing transaction webhook code `%s` for item `%s`: %w", wr.Code, wr.ItemID, err)
 		switch wr.Code {
 		case InitialUpdate:
 			_, err := a.transactionWebhookAddHelper(c, wr.Newtransactions, wr.ItemID)
 			if err != nil {
-				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items", wr.ItemID, wr.Newtransactions)
+				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items: %w", wr.ItemID, wr.Newtransactions, err)
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
@@ -113,7 +113,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 		case HistoricalUpdate:
 			_, err := a.transactionWebhookAddHelper(c, wr.Newtransactions, wr.ItemID)
 			if err != nil {
-				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items", wr.ItemID, wr.Newtransactions)
+				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items: %w", wr.ItemID, wr.Newtransactions, err)
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
@@ -122,7 +122,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 		case DefaultUpdate:
 			_, err := a.transactionWebhookAddHelper(c, wr.Newtransactions, wr.ItemID)
 			if err != nil {
-				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items", wr.ItemID, wr.Newtransactions)
+				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items: %w", wr.ItemID, wr.Newtransactions, err)
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
@@ -132,7 +132,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			for _, tid := range wr.RemovedTransactions {
 				err := a.dbClient.DeleteTransactionByPlaidID(c, tid)
 				if err != nil {
-					a.logger.Errorf("failed processing transaction removal webhook")
+					a.logger.Errorf("failed processing transaction removal webhook: %w", err)
 					c.AbortWithStatus(http.StatusInternalServerError)
 					return
 				}
@@ -140,7 +140,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			return
 
 		default:
-			a.logger.Errorf("invalid transaction webhook code `%s`", wr.Code)
+			a.logger.Errorf("invalid transaction webhook code `%s`: %w", wr.Code, err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
