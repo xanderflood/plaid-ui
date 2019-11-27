@@ -80,7 +80,7 @@ func main() {
 		logger,
 		options.PlaidEnvironment,
 		options.PlaidPublicKey,
-		fmt.Sprintf("https://%s/v1/plaid/webhook", options.ServiceDomain), //TODO refactor the router logic
+		fmt.Sprintf("https://%s/webhook/v1/plaid", options.ServiceDomain), //TODO refactor the router logic
 		map[views.TemplateName]string{
 			views.TemplateNameSPA:           "index.tmpl",
 			views.TemplateNameNotRegistered: "not_registered.tmpl",
