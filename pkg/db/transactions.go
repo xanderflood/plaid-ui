@@ -72,14 +72,14 @@ INSERT INTO "transactions" (
 ) VALUES (
 	$1, $2, $3, NOW(), NOW(),
 	$4, $5, $6,
-	$7, $8, $9, $10, $11, $12, $13, $14, $15
+	$7, $8, $9, $10, $11, $12, $13, $14
 ) ON CONFLICT DO
 UPDATE SET
 	"modified_at" = NOW(),
 	"amount" = $5,
-	"plaid_pending" = $11,
-	"plaid_pending_transaction_id" = $12
-WHERE "plaid_transaction_id" = $7
+	"plaid_pending" = $10,
+	"plaid_pending_transaction_id" = $11
+WHERE "plaid_transaction_id" = $1
 RETURNING "created_at" = "modified_at"`,
 		uuid,
 		transaction.AccountUUID,
