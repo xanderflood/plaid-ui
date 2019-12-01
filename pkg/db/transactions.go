@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS "transactions"
 func (a *DBAgent) UpsertTransaction(ctx context.Context, accountUUID string, transaction Transaction) (bool, error) {
 	uuid := a.uuider.UUID()
 	row := a.db.QueryRowContext(ctx, `
-INSERT INTO "accounts" (
+INSERT INTO "transactions" (
 	"uuid",
 	"account_uuid",
 	"user_uuid",
