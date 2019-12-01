@@ -73,8 +73,8 @@ INSERT INTO "transactions" (
 	$1, $2, $3, NOW(), NOW(),
 	$4, $5, $6,
 	$7, $8, $9, $10, $11, $12, $13, $14
-) ON CONFLICT DO
-UPDATE SET
+) ON CONFLICT ("uuid")
+DO UPDATE SET
 	"modified_at" = NOW(),
 	"amount" = $5,
 	"plaid_pending" = $10,
