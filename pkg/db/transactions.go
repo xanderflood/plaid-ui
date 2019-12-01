@@ -79,7 +79,6 @@ DO UPDATE SET
 	"amount" = $5,
 	"plaid_pending" = $10,
 	"plaid_pending_transaction_id" = $11
-WHERE "plaid_transaction_id" = $1
 RETURNING "created_at" = "modified_at"`,
 		uuid,
 		transaction.AccountUUID,
