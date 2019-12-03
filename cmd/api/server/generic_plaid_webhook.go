@@ -154,6 +154,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 }
 
 func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date time.Time, remaining *int, userUUID string, accessToken string, accounts map[string]db.Account) error {
+	//TODO I've been getting 429s from this - does it have built-in retry logic?
 	getTransactionsResp, err := a.plaidClient.GetTransactions(accessToken, date.Format(plaidapi.DateFormat), date.Format(plaidapi.DateFormat))
 	if err != nil {
 		return err

@@ -74,7 +74,6 @@ func NewServer(
 	logger tools.Logger,
 
 	serviceDomain string,
-	plaidWebhookPath string,
 
 	authMgr auth.AuthorizationManager,
 	renderer views.Renderer,
@@ -85,7 +84,6 @@ func NewServer(
 	plaidWebhookURL := (&url.URL{
 		Scheme: "https",
 		Host:   serviceDomain,
-		Path:   plaidWebhookPath,
 	}).String()
 
 	return ServerAgent{

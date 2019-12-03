@@ -84,7 +84,7 @@
       onExit: function(err, metadata) {
         //TODO send it to the backend for storage/logging?
         if (err != null) {
-          console.log(err, '{{ .plaid_webhook_url }}');
+          console.log(err);
         }
       },
     });
@@ -108,7 +108,7 @@
         (data.error.display_message == null ? data.error.error_message : data.error.display_message)  + '</p></div>';
 
         // Render the error
-          // TODO
+        // TODO does this work?
         $('#accounts-tbody').slideUp(function() {
           displayError($('accounts-tbody'), data.error)
           $(this).slideUp(function() {

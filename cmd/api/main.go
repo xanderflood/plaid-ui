@@ -109,10 +109,7 @@ func main() {
 
 	srv := server.NewServer(
 		logger,
-
 		options.ServiceDomain,
-		fmt.Sprintf("https://%s/webhook/v1", options.ServiceDomain), //TODO refactor the router logic
-
 		authMgr,
 		renderer,
 		auth.GetAuthorizationFromContext,
