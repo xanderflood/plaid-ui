@@ -166,7 +166,7 @@ func (a JWTAuthorizationManager) BackendMiddleware() gin.HandlerFunc {
 //to refer the user back here afterwards.
 func (a JWTAuthorizationManager) FrontendMiddleware() gin.HandlerFunc {
 	redirectToLogin := func(c *gin.Context) {
-		//build the URL to redirect back to after logging ing
+		//build the URL to redirect back to after logging in
 		requestURL := (&url.URL{
 			Scheme: "https",
 			Host:   c.Request.Host,
