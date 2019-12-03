@@ -57,7 +57,7 @@ func AddRoutes(e *gin.Engine, a Server) {
 
 	//webhook
 	webhook := e.Group("/webhook")
-	webhook.POST("/v1", a.GenericPlaidWebhook)
+	webhook.POST("/v1/plaid", a.GenericPlaidWebhook)
 
 	//JWT endpoints
 	backend := e.Group("/api/v1", a.BackendAuthorizationMiddleware)
@@ -74,7 +74,6 @@ func NewServer(
 	logger tools.Logger,
 
 	serviceDomain string,
-	plaidWebhookPath string,
 
 	authMgr auth.AuthorizationManager,
 	renderer views.Renderer,
@@ -85,7 +84,6 @@ func NewServer(
 	plaidWebhookURL := (&url.URL{
 		Scheme: "https",
 		Host:   serviceDomain,
-		Path:   plaidWebhookPath,
 	}).String()
 
 	return ServerAgent{

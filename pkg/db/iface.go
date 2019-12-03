@@ -26,9 +26,7 @@ type DB interface {
 	ConfigureAccount(ctx context.Context, userUUID string, uuid string) error
 	DeconfigureAccount(ctx context.Context, userUUID string, uuid string) error
 
-	//TODO for upsert and delete, check whether the account actually
-	//exists before querying the transactions table?
-	UpsertTransaction(ctx context.Context, accountUUID string, transaction Transaction) (bool, error)
+	UpsertTransaction(ctx context.Context, transaction Transaction) (string, bool, error)
 	DeleteTransactionByPlaidID(ctx context.Context, plaidTransactionID string) error
 	GetTransactions(ctx context.Context, accountUUID string, token string) ([]Transaction, error)
 }

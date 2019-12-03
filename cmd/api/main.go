@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 
+	rehttp "github.com/PuerkitoBio/rehttp"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	flag "github.com/jessevdk/go-flags"
@@ -43,17 +45,25 @@ func main() {
 		log.Fatal(err)
 	}
 
+	plaidAPIHttpClient := *http.DefaultClient
+	plaidAPIHttpClient.Transport = rehttp.NewTransport(nil,
+		rehttp.RetryAll(
+			rehttp.RetryStatuses(http.StatusTooManyRequests),
+			rehttp.RetryStatusInterval(http.StatusInternalServerError, 999),
+		),
+		rehttp.ExpJitterDelay(500*time.Millisecond, 5*time.Second),
+	)
 	plaidClient, err := plaid.NewClient(plaid.ClientOptions{
 		ClientID:  options.PlaidClientID,
 		Secret:    options.PlaidSecret,
 		PublicKey: options.PlaidPublicKey,
 
+		HTTPClient: &plaidAPIHttpClient,
+
 		// Use 'sandbox' to test with fake credentials in Plaid's Sandbox environment
 		// Use `development` to test with real credentials while developing
 		// Use `production` to go live with real users
 		Environment: plaid.Sandbox,
-
-		HTTPClient: &http.Client{},
 	})
 	if err != nil {
 		log.Fatalf("couldn't initialize Plaid client: %s", err.Error())
@@ -80,7 +90,7 @@ func main() {
 		logger,
 		options.PlaidEnvironment,
 		options.PlaidPublicKey,
-		fmt.Sprintf("https://%s/v1/plaid/webhook", options.ServiceDomain), //TODO refactor the router logic
+		fmt.Sprintf("https://%s/webhook/v1/plaid", options.ServiceDomain), //TODO refactor the router logic
 		map[views.TemplateName]string{
 			views.TemplateNameSPA:           "index.tmpl",
 			views.TemplateNameNotRegistered: "not_registered.tmpl",
@@ -99,10 +109,7 @@ func main() {
 
 	srv := server.NewServer(
 		logger,
-
 		options.ServiceDomain,
-		fmt.Sprintf("https://%s/webhook/v1", options.ServiceDomain), //TODO refactor the router logic
-
 		authMgr,
 		renderer,
 		auth.GetAuthorizationFromContext,

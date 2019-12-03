@@ -9,7 +9,7 @@ import (
 func (a *DBAgent) EnsureTransactionsTable(ctx context.Context) error {
 	_, err := a.db.ExecContext(ctx, `
 CREATE TABLE IF NOT EXISTS "transactions"
-(	"uuid" UUID,
+(	"uuid" UUID DEFAULT gen_random_uuid(),
 	"account_uuid" UUID REFERENCES accounts(uuid),
 	"user_uuid" UUID REFERENCES users(uuid),
 	"created_at" timestamp NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS "transactions"
 	"deleted_at" timestamp,
 
 	"iso_currency_code" varchar,
-	"amount" decimal,
+	"amount" varchar,
 	"date" varchar,
 
 	"plaid_account_id" varchar,
@@ -47,11 +47,9 @@ CREATE TABLE IF NOT EXISTS "transactions"
 	return nil
 }
 
-func (a *DBAgent) UpsertTransaction(ctx context.Context, accountUUID string, transaction Transaction) (bool, error) {
-	uuid := a.uuider.UUID()
+func (a *DBAgent) UpsertTransaction(ctx context.Context, transaction Transaction) (string, bool, error) {
 	row := a.db.QueryRowContext(ctx, `
-INSERT INTO "accounts" (
-	"uuid",
+INSERT INTO "transactions" (
 	"account_uuid",
 	"user_uuid",
 	"created_at",
@@ -68,25 +66,23 @@ INSERT INTO "accounts" (
 	"plaid_pending_transaction_id",
 	"plaid_account_owner",
 	"plaid_transaction_id",
-	"plaid_type",
+	"plaid_type"
 ) VALUES (
-	$1, $2, $3, NOW(), NOW(),
-	$4, $5, $6,
-	$7, $8, $9, $10, $11, $12, $13, $14, $15
-) ON CONFLICT DO
-UPDATE SET
+	$1, $2, NOW(), NOW(),
+	$3, $4, $5,
+	$6, $7, $8, $9, $10, $11, $12, $13
+) ON CONFLICT ("uuid")
+DO UPDATE SET
 	"modified_at" = NOW(),
 	"amount" = $5,
-	"plaid_pending" = $11,
-	"plaid_pending_transaction_id" = $12
-WHERE "plaid_transaction_id" = $7
-RETURNING "created_at" = "modified_at"`,
-		uuid,
+	"plaid_pending" = $9,
+	"plaid_pending_transaction_id" = $10
+RETURNING "uuid", "created_at" = "modified_at"`,
 		transaction.AccountUUID,
 		transaction.UserUUID,
 
 		transaction.ISOCurrencyCode,
-		transaction.Amount,
+		transaction.AmountFloat(),
 		transaction.Date,
 
 		transaction.PlaidAccountID,
@@ -100,8 +96,9 @@ RETURNING "created_at" = "modified_at"`,
 	)
 
 	var isNew bool
-	err := row.Scan(&isNew)
-	return isNew, errors.Wrapf(err, "failed to upsert to transactions table for plaid transaction %s", transaction.PlaidID)
+	var uuid string
+	err := row.Scan(&uuid, &isNew)
+	return uuid, isNew, errors.Wrapf(err, "failed to upsert to transactions table for plaid transaction %s", transaction.PlaidID)
 }
 
 func (a *DBAgent) DeleteTransactionByPlaidID(ctx context.Context, plaidTransactionID string) error {
@@ -135,7 +132,7 @@ SELECT
 	"plaid_pending_transaction_id",
 	"plaid_account_owner",
 	"plaid_transaction_id",
-	"plaid_type",
+	"plaid_type"
 FROM "accounts"
 WHERE
 	"deleted_at" IS NULL

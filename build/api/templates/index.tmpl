@@ -45,15 +45,13 @@
     if (parts.length == 2) return parts.pop().split(";").shift();
   }
 
-  function authenticatedRequest(httpMethod, url, body, onSuccess) {
-    console.log(getCookie("_identify_jwt_string"))
-    $.ajax({
+  function authenticatedRequest(httpMethod, url, body, onComplete) {
+    return $.ajax({
       "type": httpMethod,
       "url": url,
       "data": body,
       //TODO parametrize the cookie name
-      "beforeSend": function(xhr){xhr.setRequestHeader('Authorization', 'Bearer ' + getCookie("_identify_jwt_string"));},
-      "success": onSuccess
+      "beforeSend": function(xhr){xhr.setRequestHeader('Authorization', 'Bearer ' + getCookie("_identify_jwt_string"));}
     });
   }
 
@@ -75,6 +73,7 @@
           'POST',
           '/api/v1/add_plaid_item',
           { "public_token": public_token },
+        ).success(
           function(data) {
             $('#intro').hide();
             refreshAccountTable();
@@ -85,7 +84,7 @@
       onExit: function(err, metadata) {
         //TODO send it to the backend for storage/logging?
         if (err != null) {
-          console.log(err, '{{ .plaid_webhook_url }}');
+          console.log(err);
         }
       },
     });
@@ -99,43 +98,44 @@
         'GET',
         '/api/v1/get_accounts',
         undefined,
-        function(data) {
-          if (data.error != null || data.error.error_code != null) {
-            // Format the error
-            var errorHtml = '<div class="inner"><p>' +
-            '<strong>' + data.error.error_code + ':</strong> ' +
-            (data.error.display_message == null ? data.error.error_message : data.error.display_message)  + '</p></div>';
+      ).fail(function(data) {
+        console.log("error", data);
+        console.log("error", data.error);
+        console.log("error", data.error.error_code);
+        // Format the error
+        var errorHtml = '<div class="inner"><p>' +
+        '<strong>' + data.error.error_code + ':</strong> ' +
+        (data.error.display_message == null ? data.error.error_message : data.error.display_message)  + '</p></div>';
 
-            // Render the error
-            $('#get-transactions-data').slideUp(function() {
-              displayError($('accounts-tbody'), data.error)
-              // TODO
-              // $(this).slideUp(function() {
-              //   $(this).html(errorHtml).slideDown();
-              // });
-            });
-          } else {
-            var html = '<tr><td><strong>UUID</strong></td><td><strong>Name</strong></td><td><strong>Institution</strong></td><td><strong>Item ID</strong></td><td><strong>Account ID</strong></td><td><strong>Webhook?</strong></td></tr>';
-            if (data.accounts) {
-              data.accounts.forEach(function(acct, idx) {
-                console.log(html)
-                html += '<tr>';
-                html += '<td>' + acct.uuid + '</td>';
-                html += '<td>' + acct.plaid_account_name + '</td>';
-                html += '<td>' + acct.plaid_institution_name + '</td>';
-                html += '<td>' + acct.plaid_item_id + '</td>';
-                html += '<td>' + acct.plaid_account_id + '</td>';
-                html += '<td>' + (acct.webhook_configured ? "On": "Off") + '</td>';
-                html += '</tr>';
-              });
-            } else {
-              html += '<tr><td colspan="10000">There are currently no accounts.</td></tr>'
-            }
-
-            $('#accounts-tbody').html(html);
-          }
+        // Render the error
+        // TODO does this work?
+        $('#accounts-tbody').slideUp(function() {
+          displayError($('accounts-tbody'), data.error)
+          $(this).slideUp(function() {
+            $(this).html(errorHtml).slideDown();
+          });
+        });
+      }).done(function(data) {
+        console.log("success");
+        var html = '<tr><td><strong>UUID</strong></td><td><strong>Name</strong></td><td><strong>Institution</strong></td><td><strong>Item ID</strong></td><td><strong>Account ID</strong></td><td><strong>Webhook?</strong></td></tr>';
+        if (data.accounts) {
+          data.accounts.forEach(function(acct, idx) {
+            console.log(html)
+            html += '<tr>';
+            html += '<td>' + acct.uuid + '</td>';
+            html += '<td>' + acct.plaid_account_name + '</td>';
+            html += '<td>' + acct.plaid_institution_name + '</td>';
+            html += '<td>' + acct.plaid_item_id + '</td>';
+            html += '<td>' + acct.plaid_account_id + '</td>';
+            html += '<td>' + (acct.webhook_configured ? "On": "Off") + '</td>';
+            html += '</tr>';
+          });
+        } else {
+          html += '<tr><td colspan="10000">There are currently no accounts.</td></tr>'
         }
-      );
+
+        $('#accounts-tbody').html(html);
+      });
     }
 
     //refresh the accounts table at the start, and whenever the button is pressed

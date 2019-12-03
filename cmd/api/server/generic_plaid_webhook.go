@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"time"
 
@@ -60,13 +61,15 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 		return
 	}
 
+	a.logger.Debugf("processing webhook - type: %s, code: %s, item ID: %s", wr.Type, wr.Code, wr.ItemID)
+
 	if len(wr.ItemID) == 0 {
 		return
 	}
 
 	accounts, err := a.dbClient.GetAccountsByPlaidItemID(c, wr.ItemID)
 	if err != nil {
-		a.logger.Errorf("failed getting accounts for plaid item `%s`", wr.ItemID)
+		a.logger.Errorf("failed getting accounts for plaid item `%s`: %s", wr.ItemID, err.Error())
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -82,7 +85,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			if wr.NewWebhookURL != a.plaidWebhookURL {
 				_, err := a.plaidClient.UpdateItemWebhook(accounts[0].PlaidItemID, a.plaidWebhookURL)
 				if err != nil {
-					a.logger.Errorf("failed processing webhook-update webhook for plaid item `%s` with `%s` as value", wr.ItemID, wr.NewWebhookURL)
+					a.logger.Errorf("failed processing webhook-update webhook for plaid item `%s` with `%s` as value: %s", wr.ItemID, wr.NewWebhookURL, err.Error())
 					c.AbortWithStatus(http.StatusInternalServerError)
 					return
 				}
@@ -90,11 +93,11 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			return
 
 		case ItemError:
-			a.logger.Errorf("received an error webhook from Plaid: %s", wr.Error)
+			a.logger.Errorf("received an error webhook from Plaid: %s: %s", wr.Error, err.Error())
 			return
 
 		default:
-			a.logger.Errorf("invalid transaction webhook code `%s`", wr.Code)
+			a.logger.Errorf("invalid transaction webhook code `%s`: %s", wr.Code, err.Error())
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -104,7 +107,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 		case InitialUpdate:
 			_, err := a.transactionWebhookAddHelper(c, wr.Newtransactions, wr.ItemID)
 			if err != nil {
-				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items", wr.ItemID, wr.Newtransactions)
+				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items: %s", wr.ItemID, wr.Newtransactions, err.Error())
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
@@ -113,7 +116,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 		case HistoricalUpdate:
 			_, err := a.transactionWebhookAddHelper(c, wr.Newtransactions, wr.ItemID)
 			if err != nil {
-				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items", wr.ItemID, wr.Newtransactions)
+				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items: %s", wr.ItemID, wr.Newtransactions, err.Error())
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
@@ -122,7 +125,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 		case DefaultUpdate:
 			_, err := a.transactionWebhookAddHelper(c, wr.Newtransactions, wr.ItemID)
 			if err != nil {
-				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items", wr.ItemID, wr.Newtransactions)
+				a.logger.Errorf("failed processing transaction webhook for plaid item `%s` with `%v` items: %s", wr.ItemID, wr.Newtransactions, err.Error())
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
@@ -132,7 +135,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			for _, tid := range wr.RemovedTransactions {
 				err := a.dbClient.DeleteTransactionByPlaidID(c, tid)
 				if err != nil {
-					a.logger.Errorf("failed processing transaction removal webhook")
+					a.logger.Errorf("failed processing transaction removal webhook: %s", err.Error())
 					c.AbortWithStatus(http.StatusInternalServerError)
 					return
 				}
@@ -140,7 +143,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 			return
 
 		default:
-			a.logger.Errorf("invalid transaction webhook code `%s`", wr.Code)
+			a.logger.Errorf("invalid transaction webhook code `%s`: %s", wr.Code, err.Error())
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
@@ -151,6 +154,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 }
 
 func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date time.Time, remaining *int, userUUID string, accessToken string, accounts map[string]db.Account) error {
+	//TODO I've been getting 429s from this - does it have built-in retry logic?
 	getTransactionsResp, err := a.plaidClient.GetTransactions(accessToken, date.Format(plaidapi.DateFormat), date.Format(plaidapi.DateFormat))
 	if err != nil {
 		return err
@@ -158,10 +162,11 @@ func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date tim
 
 	for _, plaidTransaction := range getTransactionsResp.Transactions {
 		transaction := db.Transaction{
-			UserUUID: userUUID,
+			AccountUUID: accounts[plaidTransaction.AccountID].UUID,
+			UserUUID:    userUUID,
 
 			ISOCurrencyCode: plaidTransaction.ISOCurrencyCode,
-			Amount:          plaidTransaction.Amount,
+			Amount:          big.NewFloat(plaidTransaction.Amount),
 			Date:            plaidTransaction.Date,
 
 			PlaidAccountID:            plaidTransaction.AccountID,
@@ -174,10 +179,7 @@ func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date tim
 			PlaidType:                 plaidTransaction.Type,
 		}
 
-		isNew, err := a.dbClient.UpsertTransaction(ctx,
-			accounts[plaidTransaction.AccountID].UUID,
-			transaction,
-		)
+		_, isNew, err := a.dbClient.UpsertTransaction(ctx, transaction)
 		if err != nil {
 			return err
 		}
@@ -206,12 +208,18 @@ func (a ServerAgent) transactionWebhookAddHelper(ctx context.Context, max int, i
 		return 0, fmt.Errorf("itemID `%s` has no plaid accounts", itemID)
 	}
 
+	// TODO: if the webhook is hit before the add_plaid_item call completes,
+	//  the account record won't exist. To address that, we could have the
+	//  webhook simply queue a re-tryable job instead of doing the upserts
+	//  right away.
+	// However this might not be a real issue if Plaid makes a habit of delaying a few seconds :shrug:
+
 	var accountMapping = map[string]db.Account{}
 	var accessToken = accts[0].PlaidAccessToken
 	var userUUID string
 	for _, account := range accts {
 		userUUID = account.UserUUID // these will all be the same value
-		accountMapping[account.PlaidItemID] = account
+		accountMapping[account.PlaidAccountID] = account
 	}
 
 	var remaining = max
