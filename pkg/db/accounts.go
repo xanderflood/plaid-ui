@@ -13,7 +13,7 @@ var ErrNoSuchAccount = errors.New("no such account")
 func (a *DBAgent) EnsureAccountsTable(ctx context.Context) error {
 	_, err := a.db.ExecContext(ctx, `
 CREATE TABLE IF NOT EXISTS "accounts"
-(	"uuid" UUID,
+(	"uuid" UUID DEFAULT gen_random_uuid(),
 	"user_uuid" UUID REFERENCES users(uuid),
 	"created_at" timestamp NOT NULL,
 	"modified_at" timestamp NOT NULL,
@@ -48,10 +48,8 @@ CREATE TABLE IF NOT EXISTS "accounts"
 
 //CreateAccount inserts an account into the table
 func (a *DBAgent) CreateAccount(ctx context.Context, userUUID string, acct Account) (string, error) {
-	uuid := a.uuider.UUID()
-	_, err := a.db.ExecContext(ctx, `
+	row := a.db.QueryRowContext(ctx, `
 INSERT INTO "accounts" (
-	"uuid",
 	"user_uuid",
 	"created_at",
 	"modified_at",
@@ -67,22 +65,26 @@ INSERT INTO "accounts" (
 	"plaid_institution_url",
 	"plaid_institution_logo"
 ) VALUES (
-	$1, $2, NOW(), NOW(),
-	$3, $4, $5, $6, $7,
-	$8, $9, $10, $11
-)`,
-		uuid,
+	$1, NOW(), NOW(),
+	$2, $3, $4, $5, $6,
+	$7, $8, $9, $10
+) RETURNING "uuid"`,
 		userUUID,
+
 		acct.PlaidAccessToken,
 		acct.PlaidAccountID,
 		acct.PlaidAccountName,
 		acct.PlaidAccountType,
 		acct.PlaidAccountSubtype,
+
 		acct.PlaidItemID,
 		acct.PlaidInstitutionName,
 		acct.PlaidInstitutionURL,
 		acct.PlaidInstitutionLogo,
 	)
+
+	var uuid string
+	err := row.Scan(&uuid)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to insert into accounts table")
 	}
@@ -91,7 +93,7 @@ INSERT INTO "accounts" (
 
 //GetAccounts gets all the accounts
 //TODO pagination
-//TODO write a n encoded next token library
+//TODO write an encoded next token library
 func (a *DBAgent) GetAccountsByPlaidItemID(ctx context.Context, itemID string) ([]Account, error) {
 	rows, err := a.db.QueryContext(ctx, fmt.Sprintf(`
 SELECT %s FROM "accounts"
