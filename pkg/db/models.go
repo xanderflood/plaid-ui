@@ -1,6 +1,7 @@
 package db
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/xanderflood/plaid-ui/pkg/plaidapi"
@@ -77,9 +78,9 @@ type Transaction struct {
 	AccountUUID string `json:"account_uuid"`
 	UserUUID    string `json:"user_uuid"`
 
-	ISOCurrencyCode string  `json:"iso_currency_code"`
-	Amount          float64 `json:"amount"`
-	Date            string  `json:"date"`
+	ISOCurrencyCode string     `json:"iso_currency_code"`
+	Amount          *big.Float `json:"amount"`
+	Date            string     `json:"date"`
 
 	PlaidAccountID            string `json:"plaid_account_id"`
 	PlaidName                 string `json:"plaid_name"`
@@ -89,4 +90,9 @@ type Transaction struct {
 	PlaidAccountOwner         string `json:"plaid_account_owner"`
 	PlaidID                   string `json:"plaid_transaction_id"`
 	PlaidType                 string `json:"plaid_transaction_type"`
+}
+
+func (t Transaction) AmountFloat() float64 {
+	fl, _ := t.Amount.Float64()
+	return fl
 }

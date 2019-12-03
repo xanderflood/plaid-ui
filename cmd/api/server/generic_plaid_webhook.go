@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"time"
 
@@ -59,6 +60,8 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
+	a.logger.Debugf("processing webhook - type: %s, code: %s, item ID: %s", wr.Type, wr.Code, wr.ItemID)
 
 	if len(wr.ItemID) == 0 {
 		return
@@ -158,10 +161,11 @@ func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date tim
 
 	for _, plaidTransaction := range getTransactionsResp.Transactions {
 		transaction := db.Transaction{
-			UserUUID: userUUID,
+			AccountUUID: accounts[plaidTransaction.AccountID].UUID,
+			UserUUID:    userUUID,
 
 			ISOCurrencyCode: plaidTransaction.ISOCurrencyCode,
-			Amount:          plaidTransaction.Amount,
+			Amount:          big.NewFloat(plaidTransaction.Amount),
 			Date:            plaidTransaction.Date,
 
 			PlaidAccountID:            plaidTransaction.AccountID,
@@ -174,10 +178,7 @@ func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date tim
 			PlaidType:                 plaidTransaction.Type,
 		}
 
-		isNew, err := a.dbClient.UpsertTransaction(ctx,
-			accounts[plaidTransaction.AccountID].UUID,
-			transaction,
-		)
+		_, isNew, err := a.dbClient.UpsertTransaction(ctx, transaction)
 		if err != nil {
 			return err
 		}
@@ -206,12 +207,18 @@ func (a ServerAgent) transactionWebhookAddHelper(ctx context.Context, max int, i
 		return 0, fmt.Errorf("itemID `%s` has no plaid accounts", itemID)
 	}
 
+	// TODO: if the webhook is hit before the add_plaid_item call completes,
+	//  the account record won't exist. To address that, we could have the
+	//  webhook simply queue a re-tryable job instead of doing the upserts
+	//  right away.
+	// However this might not be a real issue if Plaid makes a habit of delaying a few seconds :shrug:
+
 	var accountMapping = map[string]db.Account{}
 	var accessToken = accts[0].PlaidAccessToken
 	var userUUID string
 	for _, account := range accts {
 		userUUID = account.UserUUID // these will all be the same value
-		accountMapping[account.PlaidItemID] = account
+		accountMapping[account.PlaidAccountID] = account
 	}
 
 	var remaining = max
