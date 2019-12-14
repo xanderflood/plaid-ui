@@ -1,180 +1,114 @@
 package db
 
-import (
-	"context"
+// func (a *DBAgent) EnsureTransactionsTable(ctx context.Context) error {
+// 	_, err := a.db.ExecContext(ctx, `
+// CREATE TABLE IF NOT EXISTS "transactions"
+// (	"uuid" UUID DEFAULT gen_random_uuid(),
+// 	"account_uuid" UUID REFERENCES accounts(uuid),
+// 	"user_uuid" UUID REFERENCES users(uuid),
+// 	"created_at" timestamp NOT NULL,
+// 	"modified_at" timestamp NOT NULL,
+// 	"deleted_at" timestamp,
 
-	"github.com/pkg/errors"
-)
+// 	"source_transaction_uuid" UUID REFERENCES source_transactions(uuid),
+// 	"inverse_transaction_uuid" UUID REFERENCES transactions(uuid),
 
-func (a *DBAgent) EnsureTransactionsTable(ctx context.Context) error {
-	_, err := a.db.ExecContext(ctx, `
-CREATE TABLE IF NOT EXISTS "transactions"
-(	"uuid" UUID DEFAULT gen_random_uuid(),
-	"account_uuid" UUID REFERENCES accounts(uuid),
-	"user_uuid" UUID REFERENCES users(uuid),
-	"created_at" timestamp NOT NULL,
-	"modified_at" timestamp NOT NULL,
-	"deleted_at" timestamp,
+// 	"iso_currency_code" varchar,
+// 	"amount" varchar,
+// 	"date" date,
+// 	"amortization_period" tsrange,
 
-	"iso_currency_code" varchar,
-	"amount" varchar,
-	"date" varchar,
+// 	"account_id" varchar,
+// 	"name" varchar,
+// 	"category_id" varchar,
+// 	"account_owner" varchar,
+// 	"transaction_type" varchar,
+// 	PRIMARY KEY ("uuid")
+// )`)
+// 	if err != nil {
+// 		return errors.Wrapf(err, "failed to ensure transactions table")
+// 	}
 
-	"plaid_account_id" varchar,
-	"plaid_name" varchar,
-	"plaid_category_id" varchar,
-	"plaid_pending" boolean,
-	"plaid_pending_transaction_id" varchar,
-	"plaid_account_owner" varchar,
-	"plaid_transaction_id" varchar,
-	"plaid_type" varchar,
-	PRIMARY KEY ("uuid")
-)`)
-	if err != nil {
-		return errors.Wrapf(err, "failed to ensure transactions table")
-	}
+// 	_, err = a.db.ExecContext(ctx, `CREATE INDEX ON transactions USING btree(account_uuid)`)
+// 	if err != nil {
+// 		return errors.Wrap(err, "failed to ensure account_uuid index for transactions")
+// 	}
+// 	_, err = a.db.ExecContext(ctx, `CREATE INDEX ON transactions USING btree(user_uuid)`)
+// 	if err != nil {
+// 		return errors.Wrap(err, "failed to ensure user_uuid index for transactions")
+// 	}
+// 	_, err = a.db.ExecContext(ctx, `CREATE INDEX ON transactions USING btree(source_transaction_uuid)`)
+// 	if err != nil {
+// 		return errors.Wrap(err, "failed to ensure source_transaction_uuid index for source_transactions")
+// 	}
+// 	_, err = a.db.ExecContext(ctx, `CREATE INDEX ON transactions USING gist(amortization_period)`)
+// 	if err != nil {
+// 		return errors.Wrap(err, "failed to ensure amortization_period index for source_transactions")
+// 	}
 
-	_, err = a.db.ExecContext(ctx, `CREATE INDEX ON transactions USING btree(account_uuid)`)
-	if err != nil {
-		return errors.Wrap(err, "failed to ensure account_uuid index for transactions")
-	}
+// 	return nil
+// }
 
-	_, err = a.db.ExecContext(ctx, `CREATE INDEX ON transactions USING btree(plaid_transaction_id)`)
-	if err != nil {
-		return errors.Wrap(err, "failed to ensure plaid_transaction_id index for transactions")
-	}
+// TODO
+// TODO
+// TODO
+// TODO before this, focus on pagination, and on creating a view
+// TODO for source transactions and one for unprocessed source transactions
+// TODO
+// TODO
+// TODO
+// func (a *DBAgent) GetTransactions(ctx context.Context, userUUID string) ([]Transaction, error) {
+// 	rows, err := a.db.QueryContext(ctx, `
+// SELECT
+// 	"uuid",
+// 	"account_uuid",
+// 	"user_uuid",
+// 	"created_at",
+// 	"modified_at",
 
-	return nil
-}
+// 	"iso_currency_code",
+// 	"amount",
+// 	"date",
 
-func (a *DBAgent) UpsertTransaction(ctx context.Context, transaction Transaction) (string, bool, error) {
-	row := a.db.QueryRowContext(ctx, `
-INSERT INTO "transactions" (
-	"account_uuid",
-	"user_uuid",
-	"created_at",
-	"modified_at",
+// 	"plaid_account_id",
+// 	"plaid_name",
+// 	"plaid_category_id",
+// 	"plaid_pending",
+// 	"plaid_pending_transaction_id",
+// 	"plaid_account_owner",
+// 	"plaid_transaction_id",
+// 	"plaid_type"
+// FROM "accounts"
+// WHERE
+// 	"deleted_at" IS NULL
+// 	AND "user_uuid" = $1
+// 	AND "trans" = $2
+// `,
+// 		userUUID,
+// 		accountUUID,
+// 	)
+// 	if err != nil {
+// 		return nil, errors.Wrapf(err, "failed to get source_transactions from table")
+// 	}
 
-	"iso_currency_code",
-	"amount",
-	"date",
+// 	//
+// 	//
+// 	//
+// 	//
+// 	//
+// }
 
-	"plaid_account_id",
-	"plaid_name",
-	"plaid_category_id",
-	"plaid_pending",
-	"plaid_pending_transaction_id",
-	"plaid_account_owner",
-	"plaid_transaction_id",
-	"plaid_type"
-) VALUES (
-	$1, $2, NOW(), NOW(),
-	$3, $4, $5,
-	$6, $7, $8, $9, $10, $11, $12, $13
-) ON CONFLICT ("uuid")
-DO UPDATE SET
-	"modified_at" = NOW(),
-	"amount" = $5,
-	"plaid_pending" = $9,
-	"plaid_pending_transaction_id" = $10
-RETURNING "uuid", "created_at" = "modified_at"`,
-		transaction.AccountUUID,
-		transaction.UserUUID,
+// func (a *DBAgent) DeleteTransaction(ctx context.Context, userUUID string, uuid string) {
 
-		transaction.ISOCurrencyCode,
-		transaction.AmountFloat(),
-		transaction.Date,
+// }
 
-		transaction.PlaidAccountID,
-		transaction.PlaidName,
-		transaction.PlaidCategoryID,
-		transaction.PlaidPending,
-		transaction.PlaidPendingTransactionID,
-		transaction.PlaidAccountOwner,
-		transaction.PlaidID,
-		transaction.PlaidType,
-	)
+// func (a *DBAgent) GetAmortizedTransactionsForPeriod(ctx context.Context, userUUID string, start time.Time, end time.Time) {
 
-	var isNew bool
-	var uuid string
-	err := row.Scan(&uuid, &isNew)
-	return uuid, isNew, errors.Wrapf(err, "failed to upsert to transactions table for plaid transaction %s", transaction.PlaidID)
-}
+// }
 
-func (a *DBAgent) DeleteTransactionByPlaidID(ctx context.Context, plaidTransactionID string) error {
-	_, err := a.db.ExecContext(ctx, `
-UPDATE "accounts"
-SET "deleted_at" = NOW()
-WHERE "plaid_transaction_id" = $1`,
-		plaidTransactionID,
-	)
-	return errors.Wrapf(err, "failed to insert into transactions table")
-}
-
-func (a *DBAgent) GetTransactions(ctx context.Context, userUUID string, accountUUID string) ([]Transaction, error) {
-	//TODO pagination
-	rows, err := a.db.QueryContext(ctx, `
-SELECT
-	"uuid",
-	"account_uuid",
-	"user_uuid",
-	"created_at",
-	"modified_at",
-
-	"iso_currency_code",
-	"amount",
-	"date",
-
-	"plaid_account_id",
-	"plaid_name",
-	"plaid_category_id",
-	"plaid_pending",
-	"plaid_pending_transaction_id",
-	"plaid_account_owner",
-	"plaid_transaction_id",
-	"plaid_type"
-FROM "accounts"
-WHERE
-	"deleted_at" IS NULL
-	AND "user_uuid" = $1
-	AND "account_uuid" = $2
-`,
-		userUUID,
-		accountUUID,
-	)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get transactions from table")
-	}
-
-	var transactions []Transaction
-	for rows.Next() {
-		var transaction Transaction
-		err = rows.Scan(
-			&transaction.UUID,
-			&transaction.AccountUUID,
-			&transaction.UserUUID,
-			&transaction.CreatedAt,
-			&transaction.ModifiedAt,
-
-			&transaction.ISOCurrencyCode,
-			&transaction.Amount,
-			&transaction.Date,
-
-			&transaction.PlaidAccountID,
-			&transaction.PlaidName,
-			&transaction.PlaidCategoryID,
-			&transaction.PlaidPending,
-			&transaction.PlaidPendingTransactionID,
-			&transaction.PlaidAccountOwner,
-			&transaction.PlaidID,
-			&transaction.PlaidType,
-		)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to scan result of querying for all transactions for account %s", accountUUID)
-		}
-
-		transactions = append(transactions, transaction)
-	}
-
-	return transactions, nil
-}
+// //TODO
+// // TODO ProcessSourceTransaction(
+// //     ctx context.Context,
+// //     sourceTransactionUUID string,
+// //     transactions []Transaction,
+// // )
