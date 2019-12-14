@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 set +e
 
 docker login -u $DOCKER_USER -p $DOCKER_PASS
