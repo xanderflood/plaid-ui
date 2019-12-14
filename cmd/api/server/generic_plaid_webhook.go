@@ -133,7 +133,7 @@ func (a ServerAgent) GenericPlaidWebhook(c *gin.Context) {
 
 		case TransactionsRemoved:
 			for _, tid := range wr.RemovedTransactions {
-				err := a.dbClient.DeleteTransactionByPlaidID(c, tid)
+				err := a.dbClient.DeleteSourceTransactionByPlaidID(c, tid)
 				if err != nil {
 					a.logger.Errorf("failed processing transaction removal webhook: %s", err.Error())
 					c.AbortWithStatus(http.StatusInternalServerError)
@@ -161,7 +161,7 @@ func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date tim
 	}
 
 	for _, plaidTransaction := range getTransactionsResp.Transactions {
-		transaction := db.Transaction{
+		transaction := db.SourceTransaction{
 			AccountUUID: accounts[plaidTransaction.AccountID].UUID,
 			UserUUID:    userUUID,
 
@@ -179,7 +179,7 @@ func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date tim
 			PlaidType:                 plaidTransaction.Type,
 		}
 
-		_, isNew, err := a.dbClient.UpsertTransaction(ctx, transaction)
+		_, isNew, err := a.dbClient.UpsertSourceTransaction(ctx, transaction)
 		if err != nil {
 			return err
 		}

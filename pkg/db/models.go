@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"math/big"
 	"time"
 
@@ -71,12 +72,14 @@ func (a *Account) StandardFieldPointers() []interface{} {
 	}
 }
 
-//Transaction represents a single transaction
-type Transaction struct {
+//SourceTransaction represents a single transaction from a source like Plaid
+type SourceTransaction struct {
 	Model
 
 	AccountUUID string `json:"account_uuid"`
 	UserUUID    string `json:"user_uuid"`
+
+	Processed bool `json:"processed"`
 
 	ISOCurrencyCode string     `json:"iso_currency_code"`
 	Amount          *big.Float `json:"amount"`
@@ -92,7 +95,85 @@ type Transaction struct {
 	PlaidType                 string `json:"plaid_transaction_type"`
 }
 
-func (t Transaction) AmountFloat() float64 {
+func (t SourceTransaction) AmountFloat() float64 {
 	fl, _ := t.Amount.Float64()
 	return fl
+}
+
+const StandardSourceTransactionFieldNameList = `
+	"uuid",
+	"account_uuid",
+	"user_uuid",
+	"created_at",
+	"modified_at",
+
+	"iso_currency_code",
+	"amount",
+	"date",
+
+	"plaid_account_id",
+	"plaid_name",
+	"plaid_category_id",
+	"plaid_pending",
+	"plaid_pending_transaction_id",
+	"plaid_account_owner",
+	"plaid_transaction_id",
+	"plaid_type"
+`
+
+func (t *SourceTransaction) StandardFieldPointers() []interface{} {
+	return []interface{}{
+		&t.UUID,
+		&t.AccountUUID,
+		&t.UserUUID,
+		&t.CreatedAt,
+		&t.ModifiedAt,
+
+		&t.ISOCurrencyCode,
+		&t.Amount,
+		&t.Date,
+
+		&t.PlaidAccountID,
+		&t.PlaidName,
+		&t.PlaidCategoryID,
+		&t.PlaidPending,
+		&t.PlaidPendingTransactionID,
+		&t.PlaidAccountOwner,
+		&t.PlaidID,
+		&t.PlaidType,
+	}
+}
+
+//Transaction represents a single user-created transaction
+type Transaction struct {
+	Model
+
+	AccountUUID           string `json:"account_uuid"`
+	UserUUID              string `json:"user_uuid"`
+	SourceTransactionUUID string `json:"source_transaction_uuid"`
+	InverseOf             string `json:"inverse_transaction_uuid"`
+
+	ISOCurrencyCode    string     `json:"iso_currency_code"`
+	Amount             *big.Float `json:"amount"`
+	Date               string     `json:"date"`
+	AmortizationPeriod string     `json:"amortization_period"`
+
+	AccountID    string `json:"account_id"`
+	Name         string `json:"name"`
+	CategoryID   string `json:"category_id"`
+	AccountOwner string `json:"account_owner"`
+	Type         string `json:"transaction_type"`
+}
+
+type Category struct {
+	Model
+
+	UserUUID string `json:"user_uuid"`
+	Name     string `json:"name"`
+
+	Deductibility *json.Number `json:"deductibility,omitempty"`
+
+	//TODO add budgets to a category
+	// or maybe BUDGET is a separate model that provides a rule
+	// for mapping category/period pairs to amounts
 }
