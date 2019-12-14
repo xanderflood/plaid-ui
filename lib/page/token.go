@@ -27,7 +27,6 @@ func (td *SkipTakeTokenData) SetQuery(q interface{}) {
 	}
 
 	td.Query = json.RawMessage(bs)
-	return
 }
 
 //Tokener converts tokens to structured data and back
