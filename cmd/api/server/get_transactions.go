@@ -17,11 +17,9 @@ type QuerySourceTransactionsRequest struct {
 
 //QuerySourceTransactionsResponse encodes a single response to query transactions
 type QuerySourceTransactionsResponse struct {
-	SourceTransactions []db.SourceTransactions `json:"source_transactions"`
-	Token              string                  `json:"token,omitempty"`
+	SourceTransactions []db.SourceTransaction `json:"source_transactions"`
+	Token              string                 `json:"token,omitempty"`
 }
-
-func (q QueryTransactionsRequest) Query() db.SourceTransactionQuery
 
 //QuerySourceTransactions gets all the accounts
 func (a ServerAgent) QuerySourceTransactions(c *gin.Context) {
@@ -52,9 +50,8 @@ func (a ServerAgent) QuerySourceTransactions(c *gin.Context) {
 	}
 
 	var (
-		ts    []SourceTransaction
+		ts    []db.SourceTransaction
 		token string
-		err   error
 	)
 	if req.Token == "" {
 		ts, token, err = a.dbClient.ContinueSourceTransactionsQuery(c, req.Token)
@@ -65,7 +62,7 @@ func (a ServerAgent) QuerySourceTransactions(c *gin.Context) {
 			IncludeProcessed: req.IncludeProcessed,
 		}
 
-		ts, token, err := a.dbClient.StartSourceTransactionsQuery(c, query)
+		ts, token, err = a.dbClient.StartSourceTransactionsQuery(c, query)
 	}
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -73,7 +70,7 @@ func (a ServerAgent) QuerySourceTransactions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"source_transactions": accounts,
+		"source_transactions": ts,
 		"next_token":          token,
 	})
 }
