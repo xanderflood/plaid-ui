@@ -21,4 +21,4 @@ before_install:
 before_script:
   - docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.21.0 golangci-lint run --config=.golangci-lint.yaml
 
-script: ./travis_build.sh
+script: ./.travis_build.sh
