@@ -4,6 +4,7 @@ set +e
 docker login -u $DOCKER_USER -p $DOCKER_PASS
 
 # build the executable
+go version
 CGO_ENABLED=0 GOOS=linux go build -o ./build/api/api ./cmd/api
 
 export docker_repo=xanderflood/plaid-ui

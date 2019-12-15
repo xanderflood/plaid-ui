@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/xanderflood/plaid-ui/lib/page"
 )
@@ -143,6 +144,7 @@ func (q SourceTransactionQuery) Args(skip int64) []interface{} {
 func (a *DBAgent) StartSourceTransactionsQuery(ctx context.Context, q SourceTransactionQuery) ([]SourceTransaction, string, error) {
 	ts, token, err := a.sourceTransactionQueryHelper(ctx, 0, q)
 	if err != nil {
+		spew.Dump(err)
 		return nil, "", fmt.Errorf("failed to start query on source transactions: %w", err)
 	}
 
