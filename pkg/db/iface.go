@@ -72,8 +72,9 @@ type DBAgent struct {
 //NewDBAgent create a new DBAgent
 func NewDBAgent(db *sql.DB) *DBAgent {
 	return &DBAgent{
-		db:     db,
-		uuider: UUIDGenerator{},
+		db:      db,
+		uuider:  UUIDGenerator{},
+		tokener: page.Base64JSONTokener{},
 	}
 }
 
