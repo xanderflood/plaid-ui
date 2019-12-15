@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
 	"github.com/xanderflood/plaid-ui/pkg/db"
 )
@@ -49,6 +50,7 @@ func (a ServerAgent) QuerySourceTransactions(c *gin.Context) {
 		return
 	}
 
+	spew.Dump(req)
 	var (
 		ts    []db.SourceTransaction
 		token string
