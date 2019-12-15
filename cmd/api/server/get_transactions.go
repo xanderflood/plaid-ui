@@ -55,7 +55,7 @@ func (a ServerAgent) QuerySourceTransactions(c *gin.Context) {
 		ts    []db.SourceTransaction
 		token string
 	)
-	if req.Token == "" {
+	if req.Token != "" {
 		ts, token, err = a.dbClient.ContinueSourceTransactionsQuery(c, req.Token)
 	} else {
 		query := db.SourceTransactionQuery{
