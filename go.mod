@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/PuerkitoBio/rehttp v1.0.0
+	github.com/davecgh/go-spew v1.1.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.4.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
