@@ -64,7 +64,7 @@ func AddRoutes(e *gin.Engine, a Server) {
 	backend := e.Group("/api/v1", a.BackendAuthorizationMiddleware)
 	backend.POST("/add_plaid_item", a.AddPlaidItem)
 	backend.GET("/get_accounts", a.GetAccounts)
-	backend.POST("/get_transactions", a.QuerySourceTransactions)
+	backend.POST("/query_source_transactions", a.QuerySourceTransactions)
 
 	//admin endpoints
 	adminGroup := backend.Group("/admin")

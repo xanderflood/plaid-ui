@@ -108,7 +108,7 @@ RETURNING "uuid", "created_at" = "modified_at"`,
 
 func (a *DBAgent) DeleteSourceTransactionByPlaidID(ctx context.Context, plaidTransactionID string) error {
 	_, err := a.db.ExecContext(ctx, `
-UPDATE "accounts"
+UPDATE "source_transactions"
 SET "deleted_at" = NOW()
 WHERE "plaid_transaction_id" = $1`,
 		plaidTransactionID,
@@ -128,7 +128,7 @@ func (q SourceTransactionQuery) Query() string {
 		addendum = `AND "processed" IS FALSE`
 	}
 	return fmt.Sprintf(`SELECT %s
-FROM "accounts"
+FROM "source_transactions"
 WHERE
 	"deleted_at" IS NULL
 	AND "user_uuid" = $1

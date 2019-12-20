@@ -1,22 +1,12 @@
 #!/usr/bin/env bash
 set +e
 
-docker login -u $DOCKER_USER -p $DOCKER_PASS
-
 # build the executable
-#
-#
-# TODO build with go 1.13 in a docker container?
-#.  or is there travis config for that?
-#
-#
-#
 docker run --rm -v $(pwd):/builddir -w /builddir -e CGO_ENABLED=0 -e GOOS=linux golang:1.13 go build -v -o ./build/api/api ./cmd/api
-# go version
-# CGO_ENABLED=0 GOOS=linux go build -o ./build/api/api ./cmd/api
 
 export docker_repo=xanderflood/plaid-ui
 export docker_build_directory=./build/api
+docker login -u $DOCKER_USER -p $DOCKER_PASS
 
 # build and push the base image
 export TAG=`if [ "$TRAVIS_BRANCH" = "master" ]; then echo "latest"; else echo "staging" ; fi`
