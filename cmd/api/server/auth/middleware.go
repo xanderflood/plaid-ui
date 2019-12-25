@@ -18,29 +18,6 @@ import (
 //in the context
 const AuthorizationContextKey = "PLAID_UI_PUBLIC_API_AUTHORIZATION"
 
-//Authorization describes the authorities stored in a user JWT
-type Authorization struct {
-	jwt.StandardClaims
-	UserUUID string `json:"sub,omitempty"`
-	Email    string `json:"eml,omitempty"`
-	Admin    bool   `json:"login.adm,omitempty"`
-	User     bool   `json:"login.user,omitempty"`
-}
-
-//Valid applies standard JWT validations as well as generic
-//user authorization rules.
-func (a *Authorization) Valid() error {
-	if err := a.StandardClaims.Valid(); err != nil {
-		return err
-	}
-
-	if !a.Admin && len(a.UserUUID) == 0 {
-		return errors.New("non-admin user does not have an identity")
-	}
-
-	return nil
-}
-
 //Getter is a helper for grabbing the Authorization
 //that the middleware stores in the context.
 //go:generate counterfeiter . Getter

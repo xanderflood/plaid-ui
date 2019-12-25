@@ -1,10 +1,27 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+//TODO start using this request body so and the db.Authorization
+//QueryAccountsRequest encodes a single request to query transactions
+type QueryAccountsRequest struct {
+	UserUUID string `json:"user_uuid"`
+
+	//TODO add pagination
+	Token string `json:"token"`
+}
+
+func (r QueryAccountsRequest) Validate() error {
+	if r.UserUUID != "" {
+		return errors.New("field `user_uuid` must be present and nonempty")
+	}
+	return nil
+}
 
 //GetAccounts gets all the accounts
 func (a ServerAgent) GetAccounts(c *gin.Context) {

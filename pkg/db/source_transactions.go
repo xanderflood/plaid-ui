@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/xanderflood/plaid-ui/lib/page"
 )
@@ -117,7 +116,6 @@ WHERE "plaid_transaction_id" = $1`,
 }
 
 type SourceTransactionQuery struct {
-	UserUUID         string `json:"user_uuid"`
 	AccountUUID      string `json:"account_uuid"`
 	IncludeProcessed bool   `json:"include_processed"`
 }
@@ -137,21 +135,20 @@ WHERE
 OFFSET $3 LIMIT $4
 `, StandardSourceTransactionFieldNameList, addendum)
 }
-func (q SourceTransactionQuery) Args(skip int64) []interface{} {
-	return []interface{}{q.UserUUID, q.AccountUUID, skip, SourceTransactionMaxPageSize}
+func (q SourceTransactionQuery) Args(userUUID string, skip int64) []interface{} {
+	return []interface{}{userUUID, q.AccountUUID, skip, SourceTransactionMaxPageSize}
 }
 
-func (a *DBAgent) StartSourceTransactionsQuery(ctx context.Context, q SourceTransactionQuery) ([]SourceTransaction, string, error) {
-	ts, token, err := a.sourceTransactionQueryHelper(ctx, 0, q)
+func (a *DBAgent) StartSourceTransactionsQuery(ctx context.Context, auth Authorization, q SourceTransactionQuery) ([]SourceTransaction, string, error) {
+	ts, token, err := a.sourceTransactionQueryHelper(ctx, auth, 0, q)
 	if err != nil {
-		spew.Dump(err)
 		return nil, "", fmt.Errorf("failed to start query on source transactions: %w", err)
 	}
 
 	return ts, token, err
 }
 
-func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, token string) ([]SourceTransaction, string, error) {
+func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, auth Authorization, token string) ([]SourceTransaction, string, error) {
 	var td page.SkipTakeTokenData
 	err := a.tokener.ParseToken([]byte(token), td)
 	if err != nil {
@@ -164,7 +161,7 @@ func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, token str
 		return nil, "", fmt.Errorf("invalid query descriptor provided: %w", err)
 	}
 
-	ts, token, err := a.sourceTransactionQueryHelper(ctx, td.Skip, q)
+	ts, token, err := a.sourceTransactionQueryHelper(ctx, auth, td.Skip, q)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to confinue query on source transactions with token %s: %w", token, err)
 	}
@@ -174,8 +171,8 @@ func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, token str
 
 const SourceTransactionMaxPageSize = 20
 
-func (a *DBAgent) sourceTransactionQueryHelper(ctx context.Context, skip int64, q SourceTransactionQuery) ([]SourceTransaction, string, error) {
-	rows, err := a.db.QueryContext(ctx, q.Query(), q.Args(skip)...)
+func (a *DBAgent) sourceTransactionQueryHelper(ctx context.Context, auth Authorization, skip int64, q SourceTransactionQuery) ([]SourceTransaction, string, error) {
+	rows, err := a.db.QueryContext(ctx, q.Query(), q.Args(auth.UserUUID, skip)...)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to get source_transactions from table")
 	}

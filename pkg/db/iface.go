@@ -21,6 +21,9 @@ type DB interface {
 	// EnsureCategoryTable(ctx context.Context) error
 	// EnsureCategoryTransactionsTable(ctx context.Context) error
 
+	//TODO add `auth Authorization` to every function, and use it
+	// to build extra WHERE clauses
+
 	RegisterUser(ctx context.Context, uuid string, email string) error
 	CheckUser(ctx context.Context, uuid string) (bool, error)
 
@@ -32,8 +35,8 @@ type DB interface {
 
 	UpsertSourceTransaction(ctx context.Context, transaction SourceTransaction) (string, bool, error)
 	DeleteSourceTransactionByPlaidID(ctx context.Context, plaidTransactionID string) error
-	StartSourceTransactionsQuery(ctx context.Context, q SourceTransactionQuery) ([]SourceTransaction, string, error)
-	ContinueSourceTransactionsQuery(ctx context.Context, token string) ([]SourceTransaction, string, error)
+	StartSourceTransactionsQuery(ctx context.Context, auth Authorization, q SourceTransactionQuery) ([]SourceTransaction, string, error)
+	ContinueSourceTransactionsQuery(ctx context.Context, auth Authorization, token string) ([]SourceTransaction, string, error)
 
 	//first
 	// TODO GetTransactions(ctx context.Context, userUUID string)
