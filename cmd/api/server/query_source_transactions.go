@@ -1,30 +1,20 @@
 package server
 
 import (
-	"errors"
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
 	"github.com/xanderflood/plaid-ui/pkg/db"
 )
 
 //QuerySourceTransactionsRequest encodes a single request to query transactions
 type QuerySourceTransactionsRequest struct {
-	UserUUID         string `json:"user_uuid"`
-	AccountUUID      string `json:"account_uuid"`
+	UserUUID         string `json:"user_uuid" binding:"required"`
+	AccountUUID      string `json:"account_uuid" binding:"required"`
 	IncludeProcessed bool   `json:"include_processed"`
 
 	Token string `json:"token"`
-}
-
-func (r QuerySourceTransactionsRequest) Validate() error {
-	if r.UserUUID != "" {
-		return errors.New("field `user_uuid` must be present and nonempty")
-	}
-	if r.AccountUUID != "" {
-		return errors.New("field `account_uuid` must be present and nonempty")
-	}
-	return nil
 }
 
 //QuerySourceTransactionsResponse encodes a single response to query transactions
@@ -42,12 +32,7 @@ func (a ServerAgent) QuerySourceTransactions(c *gin.Context) {
 
 	var req QuerySourceTransactionsRequest
 	err := c.ShouldBindJSON(&req)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = req.Validate()
+	spew.Dump(req)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
