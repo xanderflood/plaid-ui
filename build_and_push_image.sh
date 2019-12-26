@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set +e
+
 docker build $docker_build_directory -t $docker_repo:$tmpname -f $dockerfile
 
 for tag in ${tags//,/ }

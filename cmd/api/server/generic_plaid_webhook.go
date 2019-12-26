@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -161,12 +161,13 @@ func (a ServerAgent) addLimitedTransactionsForDate(ctx context.Context, date tim
 	}
 
 	for _, plaidTransaction := range getTransactionsResp.Transactions {
+		amount := json.Number(strconv.FormatFloat(plaidTransaction.Amount, 'f', -1, 64))
 		transaction := db.SourceTransaction{
 			AccountUUID: accounts[plaidTransaction.AccountID].UUID,
 			UserUUID:    userUUID,
 
 			ISOCurrencyCode: plaidTransaction.ISOCurrencyCode,
-			Amount:          big.NewFloat(plaidTransaction.Amount),
+			Amount:          &amount,
 			Date:            plaidTransaction.Date,
 
 			PlaidAccountID:            plaidTransaction.AccountID,
