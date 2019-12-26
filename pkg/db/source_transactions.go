@@ -151,7 +151,7 @@ func (a *DBAgent) StartSourceTransactionsQuery(ctx context.Context, auth Authori
 
 func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, auth Authorization, token string) ([]SourceTransaction, string, error) {
 	var td page.SkipTakeTokenData
-	err := a.tokener.ParseToken([]byte(token), td)
+	err := a.tokener.ParseToken(token, td)
 	if err != nil {
 		return nil, "", fmt.Errorf("invalid token string provided: %w", err)
 	}

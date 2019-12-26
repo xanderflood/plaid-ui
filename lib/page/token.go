@@ -3,6 +3,7 @@ package page
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 )
 
 var B64 = base64.StdEncoding
@@ -30,9 +31,10 @@ func (td *SkipTakeTokenData) SetQuery(q interface{}) {
 }
 
 //Tokener converts tokens to structured data and back
+//go:generate counterfeiter . Tokener
 type Tokener interface {
 	ToTokenString(tokenData interface{}) ([]byte, error)
-	ParseToken(token []byte, obj interface{}) error
+	ParseToken(token string, obj interface{}) error
 }
 
 //Base64JSONTokener converts nbetween structured token objects and
@@ -51,13 +53,15 @@ func (a Base64JSONTokener) ToTokenString(tokenData interface{}) ([]byte, error) 
 	return token, nil
 }
 
+//TODO log these errors but don't pass them back to the frontend
+
 //ParseToken parses a base64-JSON byte string back into a struct
-func (a Base64JSONTokener) ParseToken(token []byte, obj interface{}) error {
-	jsonBytes := make([]byte, B64.DecodedLen(len(token)))
-	_, err := B64.Decode(jsonBytes, token)
+func (a Base64JSONTokener) ParseToken(token string, obj interface{}) error {
+	jsonBytes, err := B64.DecodeString(token)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed decoding base64: %w", err)
 	}
 
-	return json.Unmarshal(jsonBytes, obj)
+	err = json.Unmarshal(jsonBytes, obj)
+	return fmt.Errorf("failed unmarshaling json: %w", err)
 }
