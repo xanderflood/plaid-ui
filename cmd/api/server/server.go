@@ -7,6 +7,7 @@ import (
 
 	"github.com/xanderflood/plaid-ui/cmd/api/server/auth"
 	"github.com/xanderflood/plaid-ui/cmd/api/server/views"
+	"github.com/xanderflood/plaid-ui/lib/page"
 	"github.com/xanderflood/plaid-ui/lib/tools"
 	"github.com/xanderflood/plaid-ui/pkg/db"
 	"github.com/xanderflood/plaid-ui/pkg/plaidapi"
@@ -45,6 +46,7 @@ type ServerAgent struct {
 	renderer    views.Renderer
 	plaidClient plaidapi.Client
 	dbClient    db.DB
+	tokener     page.Tokener
 
 	backendJWTMiddleware  gin.HandlerFunc
 	frontendJWTMiddleware gin.HandlerFunc
@@ -98,6 +100,7 @@ func NewServer(
 		renderer:    renderer,
 		plaidClient: plaidClient,
 		dbClient:    dbClient,
+		tokener:     page.Base64JSONTokener{},
 
 		backendJWTMiddleware:  authMgr.BackendMiddleware(),
 		frontendJWTMiddleware: authMgr.FrontendMiddleware(),

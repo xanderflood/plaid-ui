@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
-	"github.com/xanderflood/plaid-ui/lib/page"
 )
 
 func (a *DBAgent) EnsureSourceTransactionsTable(ctx context.Context) error {
@@ -121,84 +119,75 @@ type SourceTransactionQuery struct {
 	IncludeProcessed bool   `json:"include_processed"`
 }
 
-func (q SourceTransactionQuery) Query() string {
-	var addendum string
-	if !q.IncludeProcessed {
-		addendum = `AND "processed" IS FALSE`
-	}
-	return fmt.Sprintf(`SELECT %s
+const SourceTransactionQueryTemplate = `SELECT %s
 FROM "source_transactions"
 WHERE
 	"deleted_at" IS NULL
 	AND "user_uuid" = $1
 	AND "account_uuid" = $2
 	%s
+`
+
+func (q SourceTransactionQuery) whereClauseAddendum() string {
+	if !q.IncludeProcessed {
+		return `AND "processed" IS FALSE`
+	}
+	return ""
+}
+
+func (q SourceTransactionQuery) Name() string {
+	return "SourceTransaction"
+}
+func (q SourceTransactionQuery) CountQuery() string {
+	return fmt.Sprintf(
+		SourceTransactionQueryTemplate,
+		`COUNT(*)`,
+		q.whereClauseAddendum(),
+	)
+}
+func (q SourceTransactionQuery) Query() string {
+	return fmt.Sprintf(
+		SourceTransactionQueryTemplate,
+		StandardSourceTransactionFieldNameList,
+		q.whereClauseAddendum()+`
+ORDER BY created_at
 OFFSET $3 LIMIT $4
-`, StandardSourceTransactionFieldNameList, addendum)
+`,
+	)
+}
+func (q SourceTransactionQuery) CountArgs(userUUID string) []interface{} {
+	return []interface{}{userUUID, q.AccountUUID}
 }
 func (q SourceTransactionQuery) Args(userUUID string, skip int64) []interface{} {
 	return []interface{}{userUUID, q.AccountUUID, skip, SourceTransactionMaxPageSize}
 }
 
-func (a *DBAgent) StartSourceTransactionsQuery(ctx context.Context, auth Authorization, q SourceTransactionQuery) ([]SourceTransaction, string, error) {
-	ts, token, err := a.sourceTransactionQueryHelper(ctx, auth, 0, q)
+//TODO Are these helpers necessary, or should the DBAgent only have
+// generic querying functionality, and then I write a bunch of
+// implementations of Query? that'd give me the power to genericize
+// the API side of things as well, since all query endpoints would be
+// calling the same DBAgent methods
+//
+// verdict: probably don't do that yet? feels a little premature
+
+func (a *DBAgent) SourceTransactionsQueryPreFlight(ctx context.Context, auth Authorization, q SourceTransactionQuery) (int64, error) {
+	row := a.db.QueryRowContext(ctx, q.CountQuery(), q.CountArgs(auth.UserUUID)...)
+
+	var count int64
+	err := row.Scan(&count)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to start query on source transactions: %w", err)
+		return 0, fmt.Errorf("failed to get source_transaction count from table: %w", err)
 	}
 
-	return ts, token, err
+	return count, nil
 }
 
-func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, auth Authorization, token string) ([]SourceTransaction, string, error) {
-	var td page.SkipTakeTokenData
-	err := a.tokener.ParseToken(token, &td)
-	if err != nil {
-		return nil, "", fmt.Errorf("invalid token string provided: %w", err)
-	}
+func (a *DBAgent) StartSourceTransactionsQuery(ctx context.Context, auth Authorization, q SourceTransactionQuery) (ts []SourceTransaction, err error) {
+	return a.queryHelper(ctx, auth, q, 0)
+}
 
-	var q SourceTransactionQuery
-	err = td.ParseQuery(&q)
-	if err != nil {
-		return nil, "", fmt.Errorf("invalid query descriptor provided: %w", err)
-	}
-
-	ts, token, err := a.sourceTransactionQueryHelper(ctx, auth, td.Skip, q)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to confinue query on source transactions with token %s: %w", token, err)
-	}
-
-	return ts, token, nil
+func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, auth Authorization, q SourceTransactionQuery, skip int64) (ts []SourceTransaction, err error) {
+	return a.queryHelper(ctx, auth, q, skip)
 }
 
 const SourceTransactionMaxPageSize = 20
-
-func (a *DBAgent) sourceTransactionQueryHelper(ctx context.Context, auth Authorization, skip int64, q SourceTransactionQuery) ([]SourceTransaction, string, error) {
-	spew.Dump(q.Query(), q.Args(auth.UserUUID, skip))
-	rows, err := a.db.QueryContext(ctx, q.Query(), q.Args(auth.UserUUID, skip)...)
-	if err != nil {
-		return nil, "", errors.Wrapf(err, "failed to get source_transactions from table")
-	}
-
-	var sourceTransactions []SourceTransaction
-	for rows.Next() {
-		var sourceTransaction SourceTransaction
-		err = rows.Scan((&sourceTransaction).StandardFieldPointers()...)
-		if err != nil {
-			//TODO eliminate errors.Wrapf
-			//TODOFIRST find out if fmt.Errorf handles nils the same as errors.Wrapf
-			return nil, "", errors.Wrapf(err, "failed to scan result of querying for source_transactions")
-		}
-
-		sourceTransactions = append(sourceTransactions, sourceTransaction)
-	}
-
-	//if it's an empty page, we hit the end
-	if len(sourceTransactions) == 0 {
-		return nil, "", nil
-	}
-
-	td := page.SkipTakeTokenData{Skip: skip + int64(len(sourceTransactions))}
-	td.SetQuery(q)
-	tokenBs, err := a.tokener.ToTokenString(td)
-	return sourceTransactions, string(tokenBs), err
-}

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/pkg/errors"
-	"github.com/xanderflood/plaid-ui/lib/page"
 )
 
 //ErrBadToken indicates that an invalid pagination token has been provided
@@ -35,8 +34,9 @@ type DB interface {
 
 	UpsertSourceTransaction(ctx context.Context, transaction SourceTransaction) (string, bool, error)
 	DeleteSourceTransactionByPlaidID(ctx context.Context, plaidTransactionID string) error
-	StartSourceTransactionsQuery(ctx context.Context, auth Authorization, q SourceTransactionQuery) ([]SourceTransaction, string, error)
-	ContinueSourceTransactionsQuery(ctx context.Context, auth Authorization, token string) ([]SourceTransaction, string, error)
+	SourceTransactionsQueryPreFlight(ctx context.Context, auth Authorization, q SourceTransactionQuery) (int64, error)
+	StartSourceTransactionsQuery(ctx context.Context, auth Authorization, q SourceTransactionQuery) ([]SourceTransaction, error)
+	ContinueSourceTransactionsQuery(ctx context.Context, auth Authorization, q SourceTransactionQuery, skip int64) ([]SourceTransaction, error)
 
 	//first
 	// TODO GetTransactions(ctx context.Context, userUUID string)
@@ -67,17 +67,15 @@ type DB interface {
 
 //DBAgent implements DB using a *sql.DB
 type DBAgent struct {
-	db      *sql.DB
-	uuider  UUIDer
-	tokener page.Tokener
+	db     *sql.DB
+	uuider UUIDer
 }
 
 //NewDBAgent create a new DBAgent
 func NewDBAgent(db *sql.DB) *DBAgent {
 	return &DBAgent{
-		db:      db,
-		uuider:  UUIDGenerator{},
-		tokener: page.Base64JSONTokener{},
+		db:     db,
+		uuider: UUIDGenerator{},
 	}
 }
 
