@@ -81,9 +81,10 @@ type SourceTransaction struct {
 
 	Processed bool `json:"processed"`
 
-	ISOCurrencyCode string     `json:"iso_currency_code"`
-	Amount          *big.Float `json:"amount"`
-	Date            string     `json:"date"`
+	//TODO will NULL amounts be handled properly here?
+	ISOCurrencyCode string       `json:"iso_currency_code"`
+	Amount          *json.Number `json:"amount"`
+	Date            string       `json:"date"`
 
 	PlaidAccountID            string `json:"plaid_account_id"`
 	PlaidName                 string `json:"plaid_name"`

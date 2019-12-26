@@ -74,7 +74,7 @@ INSERT INTO "source_transactions" (
 	"plaid_type"
 ) VALUES (
 	$1, $2, NOW(), NOW(),
-	false, $3, $4, $5,
+	FALSE, $3, $4, $5,
 	$6, $7, $8, $9, $10, $11, $12, $13
 ) ON CONFLICT ("uuid")
 DO UPDATE SET
