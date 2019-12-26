@@ -63,5 +63,8 @@ func (a Base64JSONTokener) ParseToken(token string, obj interface{}) error {
 	}
 
 	err = json.Unmarshal(jsonBytes, obj)
-	return fmt.Errorf("failed unmarshaling json: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed unmarshaling json: %w", err)
+	}
+	return nil
 }
