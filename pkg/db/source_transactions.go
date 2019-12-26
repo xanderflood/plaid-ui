@@ -157,7 +157,7 @@ func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, auth Auth
 	}
 
 	var q SourceTransactionQuery
-	err = td.ParseQuery(q)
+	err = td.ParseQuery(&q)
 	if err != nil {
 		return nil, "", fmt.Errorf("invalid query descriptor provided: %w", err)
 	}
