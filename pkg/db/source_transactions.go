@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/xanderflood/plaid-ui/lib/page"
 )
@@ -172,6 +173,7 @@ func (a *DBAgent) ContinueSourceTransactionsQuery(ctx context.Context, auth Auth
 const SourceTransactionMaxPageSize = 20
 
 func (a *DBAgent) sourceTransactionQueryHelper(ctx context.Context, auth Authorization, skip int64, q SourceTransactionQuery) ([]SourceTransaction, string, error) {
+	spew.Dump(q.Query(), q.Args(auth.UserUUID, skip))
 	rows, err := a.db.QueryContext(ctx, q.Query(), q.Args(auth.UserUUID, skip)...)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to get source_transactions from table")
