@@ -13,14 +13,13 @@ func (a *DBAgent) EnsureSourceTransactionsTable(ctx context.Context) error {
 	_, err := a.db.ExecContext(ctx, `
 CREATE TABLE IF NOT EXISTS "source_transactions"
 (	"uuid" UUID DEFAULT gen_random_uuid(),
-	"account_uuid" UUID REFERENCES accounts(uuid),
-	"user_uuid" UUID REFERENCES users(uuid),
+	"account_uuid" UUID REFERENCES accounts(uuid) NOT NULL,
+	"user_uuid" UUID REFERENCES users(uuid) NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"modified_at" timestamp NOT NULL,
 	"deleted_at" timestamp,
 
-	"processed" boolean,
-
+	"processed" boolean NOT NULL,
 	"iso_currency_code" varchar,
 	"amount" varchar,
 	"date" varchar,
@@ -60,6 +59,7 @@ INSERT INTO "source_transactions" (
 	"created_at",
 	"modified_at",
 
+	"processed",
 	"iso_currency_code",
 	"amount",
 	"date",
@@ -74,7 +74,7 @@ INSERT INTO "source_transactions" (
 	"plaid_type"
 ) VALUES (
 	$1, $2, NOW(), NOW(),
-	$3, $4, $5,
+	false, $3, $4, $5,
 	$6, $7, $8, $9, $10, $11, $12, $13
 ) ON CONFLICT ("uuid")
 DO UPDATE SET
